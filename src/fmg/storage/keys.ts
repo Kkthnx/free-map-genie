@@ -8,7 +8,7 @@ function createMatchForId(
     return `(?<${name}>[-]?\\d+)`;
 }
 
-export class FMG_Keys {
+export default class FMG_Keys {
     public readonly keyData: FMG.Storage.KeyData;
 
     constructor(keyData: FMG.Storage.KeyData) {

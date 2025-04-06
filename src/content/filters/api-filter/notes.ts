@@ -28,6 +28,7 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
 
             // Add the note to the notes array
             mapManager.storage.data.notes.push(note);
+            mapManager.storage.data.save();
 
             mapManager.fire("fmg-note", {
                 note,
@@ -54,6 +55,8 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
             // Assign the new data to the note
             Object.assign(note, data);
 
+            mapManager.storage.data.save();
+
             mapManager.fire("fmg-note", {
                 note,
                 action: "updated"
@@ -73,6 +76,7 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
             // Filter out the note with the given id
             mapManager.storage.data.notes =
                 mapManager.storage.data.notes.filter((note) => note.id != id);
+            mapManager.storage.data.save();
 
             mapManager.fire("fmg-note", {
                 action: "removed"

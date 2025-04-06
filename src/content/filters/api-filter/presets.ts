@@ -10,13 +10,12 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
         "presets",
         false,
         (_method, _key, _id, data, _url, block) => {
-            const id = mapManager.hasDemoPreset()
-                ? data.ordering.length - 1
-                : data.ordering.length;
-            logger.debug("Adding preset", id, data);
+            block();
 
-            // To prevet multiple saves, we disable autosave
-            mapManager.storage.data.autosave = false;
+            logger.debug("preset", data);
+            const id = mapManager.hasDemoPreset()
+                ? data.ordering.length
+                : data.ordering.length + 1;
 
             // Add the preset to the presets array
             mapManager.storage.data.presets.push({
@@ -27,19 +26,18 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
             });
 
             data.ordering.push(id);
-            logger.debug("Adding preset", data);
+            logger.debug(data.ordering);
             mapManager.storage.data.presetOrder = data.ordering;
 
-            // Now we can save
-            mapManager.storage.data.autosave = true;
-            mapManager.storage.save();
+            logger.debug("Added preset", id, data);
+
+            mapManager.storage.data.save();
 
             mapManager.fire("fmg-preset", {
                 preset: mapManager.storage.data.presets[id],
                 action: "added"
             });
 
-            block();
             return { data };
         }
     );
@@ -49,16 +47,24 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
         "presets",
         true,
         (_method, _key, id, _data, _url, block) => {
+            block();
+
             logger.debug("Deleting preset", id);
-            // To prevet multiple saves, we disable autosave
-            mapManager.storage.data.autosave = false;
+
+            const idAsNumber = Number(id);
 
             // Remove the preset from the presets array
-            mapManager.storage.data.presets.splice(parseInt(id), 1);
+            const presetIndex = mapManager.storage.data.presets.findIndex((preset) => preset.id === idAsNumber);
+            if (presetIndex < 0) {
+                logger.warn(`Failed to remove preset with id ${id} not found in storage.`);
+                return ;
+            }
+
+            mapManager.storage.data.presets.splice(presetIndex, 1);
 
             // Update preset ids
             mapManager.storage.data.presets.forEach((preset, index) => {
-                preset.id = index;
+                preset.id = index + 1;
             });
 
             // Remove presetId from presetOrder
@@ -66,30 +72,27 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
             mapManager.storage.data.presetOrder =
                 mapManager.storage.data.presetOrder
                     .map((presetId) => {
-                        if (presetId > parseInt(id)) return presetId - 1;
-                        else if (presetId == parseInt(id)) return undefined;
+                        if (mapManager.defaultPresetsIds.includes(presetId)) return presetId;
+                        else if (presetId > idAsNumber) return presetId - 1;
+                        else if (presetId == idAsNumber) return undefined;
                         return presetId;
                     })
-                    .filter((presetId) => presetId !== undefined) as number[];
+                    .filter((presetId) => presetId !== undefined);
 
             // Check if the only presetId in presetOrder is -1
             // If so then reset presetOrder to empty
             if (
-                mapManager.storage.data.presetOrder.length == 1 &&
-                mapManager.storage.data.presetOrder[0] == -1
+                mapManager.storage.data.presetOrder.length == mapManager.defaultPresetsIds.length
             ) {
                 mapManager.storage.data.presetOrder = [];
             }
 
-            // Now we can save
-            mapManager.storage.data.autosave = true;
-            mapManager.storage.save();
+            mapManager.storage.data.save();
 
             mapManager.fire("fmg-preset", {
                 action: "removed"
             });
 
-            block();
             return;
         }
     );
@@ -99,14 +102,17 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
         "presets/reorder",
         false,
         (_method, _key, _id, data, _url, block) => {
+            block();
+
             logger.debug("Reordering presets", data.ordering);
             mapManager.storage.data.presetOrder = data.ordering;
+            mapManager.storage.data.save();
             mapManager.updatePresets();
             mapManager.fire("fmg-preset", {
                 ordering: data.ordering,
                 action: "reordered"
             });
-            block();
+   
             return;
         }
     );

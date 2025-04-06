@@ -25,6 +25,7 @@ export default function (
         (_storage, _action, _key, _value, { categoryId }, block) => {
             block();
             mapManager.storage.data.visibleCategories[categoryId!] = true;
+            mapManager.storage.data.save();
         }
     );
 
@@ -34,6 +35,7 @@ export default function (
         (_storage, _action, _key, _value, { categoryId }, block) => {
             block();
             delete mapManager.storage.data.visibleCategories[categoryId!];
+            mapManager.storage.data.save();
         }
     );
 }

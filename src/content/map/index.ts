@@ -6,7 +6,7 @@ import { FMG_ApiFilter } from "@fmg/filters/api-filter";
 import { FMG_StorageFilter } from "@fmg/filters/storage-filter";
 import { FMG_HeatmapsData, FMG_MapData } from "@fmg/info";
 import { FMG_MapManager } from "@fmg/map-manager";
-import { FMG_StorageDataMigrator } from "@fmg/storage/migration";
+import FMG_StorageDataMigrator from "@fmg/storage/migration";
 
 import setupApiFilter from "@/content/filters/api-filter";
 import setupStorageFilter from "@/content/filters/storage-filter";
@@ -281,7 +281,7 @@ export class FMG_Map {
 
         channel.onMessage("clearData", async () => { 
             if (confirm("Are you sure you want to clear all data?")) {
-                await this.mapManager.storage.clear();
+                await this.mapManager.storage.clearCurrentMap();
                 await this.mapManager.reload();
             }
         });
@@ -291,8 +291,6 @@ export class FMG_Map {
 
             if (!confirm("Trying to import mapgenie account data this will overide currently store data do you want to continue!")) return;
             
-            this.mapManager.storage.autosave = false;
-
             for (const id of this.window.fmgMapgenieAccountData.locationIds) {
                 this.mapManager.storage.data.locations[id] = true;
             }
@@ -301,8 +299,7 @@ export class FMG_Map {
                 this.mapManager.storage.data.categories[id] = true;
             }
 
-            this.mapManager.storage.autosave = true;
-            await this.mapManager.storage.save();
+            await this.mapManager.storage.data.save();
 
             await this.reload();
         });
@@ -321,9 +318,7 @@ export class FMG_Map {
     public async setup(): Promise<void> {
         const settings = await channel.offscreen.getSettings();
 
-        // #if DEBUG
         window.fmgMapManager = this.mapManager;
-        // #endif
 
         this.fixGoogleMaps();
 
@@ -341,9 +336,9 @@ export class FMG_Map {
         this.setupConfig(settings);
 
         await FMG_StorageDataMigrator.migrateLegacyData(this.window);
-        await this.mapManager.load();
-
+    
         if (this.window.user) {
+            await this.mapManager.load();
             this.loadUser();
         } else {
             console.error("User not loggedin");

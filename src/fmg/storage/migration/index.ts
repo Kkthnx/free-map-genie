@@ -1,14 +1,15 @@
 import { FMG_GameData } from "@fmg/info";
-import { FMG_Keys } from "@fmg/storage/keys";
-import { FMG_Drivers } from "../drivers";
-import { LegacyDataStorage, type LegacyResult } from "./legacy";
+import FMG_Keys from "@fmg/storage/keys";
 import { isEmpty } from "@shared/utils";
+
+import LegacyDataStorage, { type LegacyResult } from "./legacy";
+import FMG_Drivers from "../drivers";
 
 export interface MigrationResult {
     [mapId: Id]: FMG.Storage.V2.StorageObject;
 }
 
-export class FMG_StorageDataMigrator {
+export default class FMG_StorageDataMigrator {
     public readonly driver: FMG.Storage.Driver;
     public readonly legacy: LegacyDataStorage;
 

@@ -5,7 +5,6 @@ import { FMG_Popup } from "./popup";
 
 import { FMG_ImportHelper } from "@fmg/storage/data/import";
 import { FMG_ExportHelper } from "@fmg/storage/data/export";
-import type { FMG_Data } from "@fmg/storage/proto/data";
 
 import { getDiffForDicyById } from "@shared/utils";
 
@@ -23,12 +22,12 @@ export class FMG_MapManager {
     }
 
     public get storage(): FMG_Storage {
+        if (!this.window.user) throw new Error("User not logged in.");
+
         if (!this._storage) {
             this._storage = new FMG_Storage(
                 this.window,
-                this.window.user
-                    ? FMG_KeyDataHelper.fromWindow(this.window)
-                    : FMG_KeyDataHelper.fromWindowAndUser(this.window, -1000)
+                FMG_KeyDataHelper.fromWindow(this.window)
             );
         }
         return this._storage;
@@ -317,6 +316,11 @@ export class FMG_MapManager {
         await this.storage.load();
         const currentData = this.storage.data;
 
+        logger.group("MapManager reload");
+        logger.raw("previous data: ", previousData);
+        logger.raw("current data: ", currentData);
+        logger.groupEnd();
+
         // Mark locations
         const diffLocations = getDiffForDicyById(previousData.locations, currentData.locations);
         this.markLocationsFound(diffLocations.added, true);
@@ -353,7 +357,7 @@ export class FMG_MapManager {
      * Import data from a file.
      */
     public async import(json: string) {
-        await FMG_ImportHelper.import(this.storage.driver, this.storage.keys, json);
+        await FMG_ImportHelper.import(this.storage.driver, this.storage.keyData, json);
         await this.reload();
     }
 
@@ -361,6 +365,13 @@ export class FMG_MapManager {
      * Export data from a file.
      */
     public async export() {
-        return FMG_ExportHelper.export(this.storage.driver, this.storage.keys);
+        return FMG_ExportHelper.export(this.storage.driver, this.storage.keyData);
+    }
+
+    public async clearPresets() {
+        this.storage.data.presets = [];
+        this.storage.data.presetOrder = [];
+        await this.storage.data.save();
+        await this.reload();
     }
 }
