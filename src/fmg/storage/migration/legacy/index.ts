@@ -18,7 +18,7 @@ export interface LegacyResult {
 /**
  * Handles multiple legacy storages
  */
-export class LegacyDataStorage {
+export default class LegacyDataStorage {
     private legacyV1: V1_FMG_Storage; // Was called v5 before the rewrite
 
     constructor(driver: FMG.Storage.Driver) {

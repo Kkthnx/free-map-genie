@@ -1,6 +1,6 @@
 import { FMG_LocalStorageDriver } from "./local-storage";
 
-export class FMG_Drivers {
+export default class FMG_Drivers {
     public static newLocalStorageDriver(
         window: Window
     ): FMG_LocalStorageDriver {

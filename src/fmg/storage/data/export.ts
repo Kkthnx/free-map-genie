@@ -1,5 +1,5 @@
 import { isEmpty } from "@shared/utils";
-import type { FMG_Keys } from "../keys";
+import FMG_Keys from "../keys";
 
 export interface ExportedData {
     json: string,
@@ -28,9 +28,9 @@ export class FMG_ExportHelper {
         URL.revokeObjectURL(url);
     }
 
-    static async export(driver: FMG.Storage.Driver, keys: FMG_Keys): Promise<ExportedData | undefined> {
+    static async export(driver: FMG.Storage.Driver, keyData: FMG.Storage.KeyData): Promise<ExportedData | undefined> {
         const data = await driver.get<FMG.Storage.V2.StorageObject>(
-            keys.latestKey
+            FMG_Keys.getV2Key(keyData)
         );
 
         if (isEmpty(data)) {
@@ -40,15 +40,15 @@ export class FMG_ExportHelper {
 
         const json: FMG.Storage.V2.ExportedJson = {
             version: 2,
-            gameId: parseInt(keys.keyData.gameId as string),
-            mapId: parseInt(keys.keyData.mapId as string),
-            userId: parseInt(keys.keyData.userId as string),
+            gameId: parseInt(keyData.gameId as string),
+            mapId: parseInt(keyData.mapId as string),
+            userId: parseInt(keyData.userId as string),
             data
         };
 
         return {
             json: JSON.stringify(json),
-            filename: this.getFileName(keys.keyData)
+            filename: this.getFileName(keyData)
         };
     }
 }

@@ -1,5 +1,5 @@
 import { isEmpty } from "@shared/utils";
-import { FMG_Keys } from "@fmg/storage/keys";
+import FMG_Keys from "@fmg/storage/keys";
 import type { LegacyResult } from ".";
 
 export type V1_FMG_StorageObject = FMG.Storage.V1.StorageObject;
