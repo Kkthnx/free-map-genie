@@ -310,16 +310,11 @@ export class FMG_MapManager {
      */
     public async reload() {
         // Store last state notes.
-        const previousData = this.storage.data;
+        const previousData = this.storage.data.snapshot();
 
         // Refetch storage data.
         await this.storage.load();
         const currentData = this.storage.data;
-
-        logger.group("MapManager reload");
-        logger.raw("previous data: ", previousData);
-        logger.raw("current data: ", currentData);
-        logger.groupEnd();
 
         // Mark locations
         const diffLocations = getDiffForDicyById(previousData.locations, currentData.locations);
@@ -330,6 +325,13 @@ export class FMG_MapManager {
         const diffCategories = getDiffForDicyById(previousData.categories, currentData.categories);
         this.trackCategories(diffCategories.added, true);
         this.trackCategories(diffCategories.removed, false);
+
+        logger.group("MapManager reload");
+        logger.raw("previous data:", previousData);
+        logger.raw("current data:", currentData);
+        logger.raw("diff locations:", diffLocations);
+        logger.raw("diff categories:", diffCategories);
+        logger.groupEnd();
 
         // Update notes, by removing previous notes and adding the current notes.        
         previousData.notes.forEach(note => this.removeNote(note));

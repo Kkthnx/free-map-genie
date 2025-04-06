@@ -127,7 +127,6 @@ export class FMG_Storage {
     public async clearCurrentMap(): Promise<void> {
         if (!this.window.user || !this.window.mapData) return;
 
-        const key = FMG_Keys.getV2Key(this.keyData);
-        await this._data[key].clear();
+        await this.data.clear();
     }
 }

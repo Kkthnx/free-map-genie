@@ -202,10 +202,26 @@ export default class FMG_Data {
         this.presetOrder = data?.presetOrder ?? [];
     }
 
+    public snapshot() {
+        const data = new FMG_Data();
+        data._locationsSet = new Set(this.locationIds);
+        data._categoriesSet = new Set(this.categoryIds);
+        data._visibleCategoriesSet = new Set(this.visibleCategoriesIds);
+
+        data._locations = idSetAsDictByIdBoolean(data._locationsSet);
+        data._categories = idSetAsDictByIdBoolean(data._categoriesSet);
+        data._visibleCategories = idSetAsDictByIdBoolean(data._visibleCategoriesSet);
+
+        data.notes = [];
+        data.presets = [];
+        data.presetOrder = [];
+
+        return data;
+    }
+
     public async clear() {
         if (!this.key || !this.driver) return;
 
         await this.driver.remove(this.key);
-        await this.load();
     }
 }
