@@ -318,6 +318,10 @@ export class FMG_Map {
     public async setup(): Promise<void> {
         const settings = await channel.offscreen.getSettings();
 
+        if (!this.window.isMini) {
+            this.cleanupProUpgradeAds();
+        }
+
         window.fmgMapManager = this.mapManager;
 
         this.fixGoogleMaps();
@@ -363,7 +367,6 @@ export class FMG_Map {
         // Only attach ui if we are not in mini mode
         if (!this.window.isMini) {
             this.unlockMaps();
-            this.cleanupProUpgradeAds();
             this.setupListeners();
 
             // If we have loaded a pro map, restore the url.
