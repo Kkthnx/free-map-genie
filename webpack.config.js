@@ -123,7 +123,7 @@ export default (env) => {
             path: dist
         },
         resolve: {
-            extensions: [".ts", ".json", ".vue"],
+            extensions: [".tsx", ".ts", ".jsx", ".js", ".vue", ".json"],
             alias: {
                 vue$: isDev
                     ? "vue/dist/vue.runtime.esm-browser.js"
@@ -134,7 +134,7 @@ export default (env) => {
         module: {
             rules: [
                 {
-                    test: /\.ts?$/,
+                    test: /\.(ts|tsx)$/,
                     exclude: /node_modules/,
                     use: [
                         "import-glob",
@@ -155,13 +155,17 @@ export default (env) => {
                             options: {
                                 jsc: {
                                     parser: {
-                                        syntax: "typescript"
+                                        syntax: "typescript",
+                                        tsx: true,
+                                        decorators: false,
+                                        dynamicImport: true
                                     },
                                     target: "esnext"
-                                }
+                                },
+                                minify: !isDev
                             }
                         }
-                    ]
+                    ],
                 },
                 {
                     test: /\.vue$/,
@@ -170,6 +174,7 @@ export default (env) => {
                 {
                     test: /\.css$/,
                     use: [
+                        // "style-loader",
                         MiniCssExtractPlugin.loader,
                         {
                             loader: "css-loader",
@@ -182,6 +187,7 @@ export default (env) => {
                 {
                     test: /\.s[ac]ss/,
                     use: [
+                        // "style-loader",
                         MiniCssExtractPlugin.loader,
                         {
                             loader: "css-loader",
@@ -189,14 +195,16 @@ export default (env) => {
                                 url: false
                             }
                         },
-                        "sass-loader"
+                        "sass-loader",
                     ]
                 }
             ]
         },
         plugins: [
             // Extract the css to a separate file
-            new MiniCssExtractPlugin(),
+            new MiniCssExtractPlugin({
+                chunkFilename: "test.css"
+            }),
 
             // Popup html file
             new HtmlWebpackPlugin({
@@ -219,7 +227,8 @@ export default (env) => {
 
             // Provide global modules
             new ProvidePlugin({
-                logger: [path.resolve(import.meta.dirname, "src", "fmg", "logger.ts"), "default"]
+                logger: [path.resolve(import.meta.dirname, "src", "fmg", "logger.ts"), "default"],
+                React: "react"
             }),
 
             // Provide the global variables
