@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import Icon from "./icon.vue";
+import Icon from "./fmg-icon.vue";
 import { ref, watch } from "vue";
 
 export interface Props {

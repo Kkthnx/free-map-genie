@@ -12,7 +12,7 @@ import setupApiFilter from "@/content/filters/api-filter";
 import setupStorageFilter from "@/content/filters/storage-filter";
 import type { ExportedData } from "@fmg/storage/data/export";
 
-import { FMG_UI } from "./ui";
+import FMG_UI from "./ui";
 import MapSwitcherPanel from "./map-panel";
 import AdsRemover from "@fmg/ads";
 

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
-import Icon from "@components/icon.vue";
+import Icon from "@components/fmg-icon.vue";
 
 const props = defineProps<{
     version: string;

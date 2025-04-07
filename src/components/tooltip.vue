@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref } from "vue";
-import Icon from "./icon.vue";
+import Icon from "./fmg-icon.vue";
 
 const $div = ref<HTMLDivElement>();
 
