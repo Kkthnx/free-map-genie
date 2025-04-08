@@ -1,46 +1,118 @@
-import { getElement } from "@shared/dom";
 
-class AdElementSelector {
-    private readonly selector: string;
-    private readonly parent: boolean;
-    private readonly window: Window;
+import { waitForCallback } from "@shared/async";
 
-    public constructor(selector: string, parent: boolean, window: Window) {
-        this.selector = selector;
-        this.parent = parent;
-        this.window = window;
-    }
-
-    public async remove() {
-        try {
-            const element = await getElement(this.selector, this.window, 5000);
-            if (this.parent) {
-                element.parentElement?.remove();
-            } else {
-                element.remove();
-            }
-        } catch {
-            logger.warn("Failed to remove ad with selector", this.selector);
-        }
-    }
+export interface AdBlockerStats {
+    totalAdsRemovedThisTick: number;
+    totalAdsRemoveLastCoupleTicks: number;
 }
 
-export default class AdsRemover {
+export interface OnTickCallback {
+    (stats: AdBlockerStats): any;
+}
 
-    private readonly window: Window;
-    private readonly selectors: AdElementSelector[];
+export default class AdBlocker {
+    public static REMOVE_CHECK_INTERVAL = 2000;
 
-    public constructor(window?: Window) {
-        this.window = window ?? global.window;
-        this.selectors = [];
+    public static totalAdsRemoveLastCoupleTicks: (number | undefined)[] = new Array(10).fill(undefined)
+
+    public static handle: number | null = null;
+    public static autoStop: boolean = true;
+
+    private static readonly onTickCallbacks: OnTickCallback[] = [];
+
+    private static removeIframeAds(): number {
+        return $('iframe[name^="ifrm_"]').remove().length;
     }
 
-    public registerSelector(selector: string, parent?: boolean) {
-        this.selectors.push(new AdElementSelector(selector, parent ?? false, this.window));
+    private static removeGoogleAds(): number {
+        return (
+            $('iframe[name*="goog"]').remove().length +
+            $('div[id^="google_ads_iframe_"]').remove().length +
+            $('iframe[src*="safeframe.googlesyndication"]').remove().length
+        );
     }
 
-    public removeElements() {
-        this.selectors.forEach((selector) => selector.remove());
+    private static removeNitroAds(): number {
+        return $("#nitro-floating-wrapper").remove().length;
     }
 
+    private static removeBodyAds(): number {
+        return $('html > iframe[sandbox="allow-scripts allow-same-origin"]').remove().length;
+    }
+
+    private static removeUpgradeProAd(): number {
+        return $("#blobby-left").remove().length;
+    }
+
+    private static removeBlueKai(): number {
+        return $('iframe[name="__bkframe"]').remove().length;
+    }
+
+    private static removePrivacyPopupElement(): number {
+        return $("#onetrust-consent-sdk").remove().length;
+    }
+
+    private static removeAds(): number {
+        return (
+            this.removeUpgradeProAd() +
+            this.removeIframeAds() +
+            this.removeGoogleAds() +
+            this.removeNitroAds() +
+            this.removeBodyAds() +
+            this.removeBlueKai()
+        );
+    }
+
+    public static stats(): AdBlockerStats {
+        return Object.seal({
+            totalAdsRemovedThisTick: this.totalAdsRemoveLastCoupleTicks[0] ?? 0,
+            totalAdsRemoveLastCoupleTicks: this.totalAdsRemoveLastCoupleTicks
+                .map((x) => x ?? 0)
+                .reduce((a, b) => (a) + b),
+        });
+    }
+
+    private static tick() {
+        this.totalAdsRemoveLastCoupleTicks.pop();
+        this.totalAdsRemoveLastCoupleTicks.unshift(this.removeAds());
+
+        const stats = this.stats();
+        this.onTickCallbacks.forEach((cb) => cb(stats));
+
+        const isInitDone = this.totalAdsRemoveLastCoupleTicks.every((x) => x !== undefined);
+        const isDone = stats.totalAdsRemoveLastCoupleTicks <= 0;
+
+        if (this.autoStop && isInitDone && isDone) {
+            logger.debug(`AdBlocker stopped no more ads removed in the last couple ticks.`);
+            this.stop();
+        }
+    }
+
+    public static start() {
+        if (this.handle != null) return;
+        this.handle = window.setInterval(() => this.tick(), this.REMOVE_CHECK_INTERVAL);
+    }
+
+    public static stop() {
+        if (!this.handle) return;
+        window.clearInterval(this.handle);
+        this.handle = null;
+    }
+
+    public static onTick(callback: OnTickCallback) {
+        this.onTickCallbacks.push(callback);
+    }
+
+    public static offTick(callback: OnTickCallback) {
+        const i = this.onTickCallbacks.findIndex((cb) => cb === callback);
+        if (i > 0) this.onTickCallbacks.splice(i, 1);
+    }
+
+    public static async removePrivacyPopup() {
+        if (!__DEBUG__) throw "This should be removed for release builds.";
+
+        await waitForCallback(() => !!this.removePrivacyPopupElement()).catch(() =>
+            logger.debug("Privacy popup not visible.")
+        );
+    }
 }

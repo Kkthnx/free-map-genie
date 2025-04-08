@@ -14,7 +14,7 @@ import type { ExportedData } from "@fmg/storage/data/export";
 
 import FMG_UI from "./ui";
 import MapSwitcherPanel from "./map-panel";
-import AdsRemover from "@fmg/ads";
+import AdBlocker from "@fmg/ads";
 
 declare global {
     export interface ContentChannel {
@@ -227,11 +227,12 @@ export class FMG_Map {
      * Cleanup pro updrade ads.
      */
     private cleanupProUpgradeAds() {
-        const adsRemover = new AdsRemover();
-        adsRemover.registerSelector("#button-upgrade", true);
-        adsRemover.registerSelector("#nitro-floating-wrapper");
-        adsRemover.registerSelector("#blobby-left");
-        adsRemover.removeElements();
+        AdBlocker.start();
+        
+        if (__DEBUG__) {
+            AdBlocker.onTick(logger.debug.bind("FMG AdBlocker stats:"));
+            AdBlocker.removePrivacyPopup();
+        }
     }
 
     /**
