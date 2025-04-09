@@ -32,20 +32,20 @@ export default function Version() {
 
     return (
         <div className="version">
-        {
-            updateNeeded
-                ? (
-                    <span
-                        className="warning"
-                        data-message={`New version available ${latest}`}
-                        onClick={onVersionClick}
-                    >
-                        <Icon icon="attention" size="0.8rem" />
-                    </span>
-                )
-                : undefined
-        }
-        <span>v{ version }</span>
-    </div>
+            {
+                updateNeeded
+                    ? (
+                        <span
+                            className="warning"
+                            data-message={`New version available ${latest}`}
+                            onClick={onVersionClick}
+                        >
+                            <Icon icon="attention" size="0.8rem" />
+                        </span>
+                    )
+                    : undefined
+            }
+            <span>v{ version }</span>
+        </div>
     );
 }
