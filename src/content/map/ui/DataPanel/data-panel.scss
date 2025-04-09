@@ -1,0 +1,11 @@
+.data-panel {
+    .btn-group {
+        display: flex;
+        gap: 5px;
+        margin-top: 5px;
+
+        .btn {
+            width: 100%;
+        }
+    }
+}

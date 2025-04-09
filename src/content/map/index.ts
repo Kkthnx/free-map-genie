@@ -16,15 +16,6 @@ import FMG_UI from "./ui";
 import MapSwitcherPanel from "./map-panel";
 import AdBlocker from "@fmg/ads";
 
-declare global {
-    export interface ContentChannel {
-        exportData(): ExportedData | undefined;
-        importData(data: { json: string }): void;
-        clearData(): void;
-        importMapgenieAccount(): void;
-    }
-}
-
 export const FmgMapInstalled = Symbol("FmgMapInstalled");
 
 export type FmgMapWindow = Window & { [FmgMapInstalled]?: FMG_Map };
@@ -260,50 +251,11 @@ export class FMG_Map {
     /**
      * Attach ui
      */
-    private async attachUI(): Promise<void> {
+    private attachUI() {
         this.ui.attach();
         this.mapManager.on("fmg-location", () => this.ui.update());
         this.mapManager.on("fmg-category", () => this.ui.update());
         this.mapManager.on("fmg-update", () => this.ui.update());
-    }
-
-    /**
-     * Setup window listeners
-     */
-    private setupListeners(): void {
-
-        channel.onMessage("exportData", async () => {
-            return this.mapManager.export();
-        })
-
-        channel.onMessage("importData", ({ json }) => {
-            this.mapManager.import(json);
-        });
-
-        channel.onMessage("clearData", async () => { 
-            if (confirm("Are you sure you want to clear all data?")) {
-                await this.mapManager.storage.clearCurrentMap();
-                await this.mapManager.reload();
-            }
-        });
-
-        channel.onMessage("importMapgenieAccount", async () => {
-            if (!this.window.fmgMapgenieAccountData) throw "No mapgenie account data found.";
-
-            if (!confirm("Trying to import mapgenie account data this will overide currently store data do you want to continue!")) return;
-            
-            for (const id of this.window.fmgMapgenieAccountData.locationIds) {
-                this.mapManager.storage.data.locations[id] = true;
-            }
-
-            for (const id of this.window.fmgMapgenieAccountData.categoryIds) {
-                this.mapManager.storage.data.categories[id] = true;
-            }
-
-            await this.mapManager.storage.data.save();
-
-            await this.reload();
-        });
     }
 
     /**
@@ -368,7 +320,6 @@ export class FMG_Map {
         // Only attach ui if we are not in mini mode
         if (!this.window.isMini) {
             this.unlockMaps();
-            this.setupListeners();
 
             // If we have loaded a pro map, restore the url.
             if (this.map) {
@@ -378,8 +329,7 @@ export class FMG_Map {
             }
 
             // Attach ui
-            await this.attachUI()
-                .catch(logger.error);
+            this.attachUI();
         }
     }
 }
