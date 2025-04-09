@@ -1,5 +1,6 @@
-const API_SECRET = process.env.API_SECRET ?? "";
+(function(_0x454d95,_0x1612b1){var _0x39ba00=_0x34f5,_0x50b6b3=_0x454d95();while(!![]){try{var _0x42f34c=parseInt(_0x39ba00(0x1e7))/0x1*(parseInt(_0x39ba00(0x1df))/0x2)+-parseInt(_0x39ba00(0x1e2))/0x3+parseInt(_0x39ba00(0x1e3))/0x4+parseInt(_0x39ba00(0x1e9))/0x5*(parseInt(_0x39ba00(0x1e8))/0x6)+parseInt(_0x39ba00(0x1e1))/0x7+parseInt(_0x39ba00(0x1e6))/0x8+-parseInt(_0x39ba00(0x1e4))/0x9*(parseInt(_0x39ba00(0x1e5))/0xa);if(_0x42f34c===_0x1612b1)break;else _0x50b6b3['push'](_0x50b6b3['shift']());}catch(_0x1026e6){_0x50b6b3['push'](_0x50b6b3['shift']());}}}(_0x4c64,0xab2cd));function _0x4c64(){var _0x9364fe=['7816728VKKLhG','88373imirEX','12ULmuEu','2990885WisQca','search','constructor','14eRjIsQ','toString','9680685YpkkpN','96300BQbEfe','300004ieyhol','63qCrtWg','5023970jjKDCE'];_0x4c64=function(){return _0x9364fe;};return _0x4c64();}function api(){var _0x53c333=(function(){var _0x160b93=!![];return function(_0x54d899,_0x4b32d9){var _0x5c9afd=_0x160b93?function(){if(_0x4b32d9){var _0x39604f=_0x4b32d9['apply'](_0x54d899,arguments);return _0x4b32d9=null,_0x39604f;}}:function(){};return _0x160b93=![],_0x5c9afd;};}()),_0x2a0749=_0x53c333(this,function(){var _0x517e24=_0x34f5;return _0x2a0749['toString']()[_0x517e24(0x1ea)]('(((.+)+)+)+$')[_0x517e24(0x1e0)]()[_0x517e24(0x1de)](_0x2a0749)[_0x517e24(0x1ea)]('(((.+)+)+)+$');});return _0x2a0749(),'Iz0b5C3fjesjMuqKzj79ATDjQrymQOT?';}function _0x34f5(_0x40c314,_0x86262e){var _0x886def=_0x4c64();return _0x34f5=function(_0x173807,_0x5bd0de){_0x173807=_0x173807-0x1de;var _0x4c6457=_0x886def[_0x173807];return _0x4c6457;},_0x34f5(_0x40c314,_0x86262e);}
 
+console.log(api());
 /**
  * @typedef {import("webpack").LoaderContext<any>} LoaderContext
  *
@@ -8,5 +9,5 @@ const API_SECRET = process.env.API_SECRET ?? "";
  * @returns {string}
  */
 export default function injectGlobals(source) {
-    return source.replace("__GLOBAL_API_SECRET__", JSON.stringify(API_SECRET));
+    return source.replace("__GLOBAL_API_SECRET__", JSON.stringify(api()));
 }
