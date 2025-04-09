@@ -1,27 +1,52 @@
 import { sleep, timeout, waitForCallback } from "./async";
 
-export function getElement<T extends Element>(
+function asElement(parent?: Window | HTMLElement) {
+    return parent !== undefined 
+        ? parent instanceof HTMLElement
+            ? parent
+            : parent.document
+        : document;
+}
+
+export function getElement<T extends HTMLElement>(
     selector: string,
-    winOrElement?: Window | Element,
+    parent?: Window | HTMLElement,
     timeoutTime: number = -1
 ): Promise<T> {
     return timeout((async () => {
-        const parent = winOrElement !== undefined 
-            ? winOrElement instanceof Element
-                ? winOrElement
-                : winOrElement.document
-            : window.document;
-        let element = parent.querySelector(selector);
-        if (element !== null) return element as T;
+        const parentElement = asElement(parent);
+
+        let element = parentElement.querySelector(selector);
+
         while (element === null) {
             await sleep(100);
-            element = parent.querySelector(selector);
+            element = parentElement.querySelector(selector);
         }
+
         return element as T;
     })(), timeoutTime, `Failed to get element ${selector}.`);
 }
 
-export function getElementWithXPath<T extends Element>(
+export function getElements<T extends HTMLElement[]>(
+    selector: string,
+    parent?: Window | HTMLElement,
+    timeoutTime: number = -1
+): Promise<T> {
+    return timeout((async () => {
+        const parentElement = asElement(parent);
+
+        let elements = parentElement.querySelectorAll(selector);
+
+        while (!elements.length) {
+            await sleep(100);
+            elements = parentElement.querySelectorAll(selector);
+        }
+
+        return [...elements] as T;
+    })(), timeoutTime, `Failed to get element ${selector}.`);
+}
+
+export function getElementWithXPath<T extends HTMLElement>(
     xpath: string,
     win?: Window,
     timeoutTime: number = -1
