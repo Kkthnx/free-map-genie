@@ -7,14 +7,12 @@ import { FMG_MapSelector } from "./map-selector";
 import debounce from "@shared/debounce";
 
 export interface State {
-    attached: boolean;
     user: string;
     type: PageType
 }
 
 declare global {
     export interface ContentChannel {
-        toastrError(data: { message: string }): void;
         getState(): State;
     }
 }
@@ -40,7 +38,6 @@ function isReduxStoreDefined(): boolean {
 }
 
 const state: State = {
-    attached: false,
     user: "n/a",
     type: "unknown"
 };
@@ -65,7 +62,6 @@ async function init() {
             listenForRefocus(() => map.reload());
 
             setState({
-                attached: true,
                 user: String(map.user),
                 type
             });
@@ -76,7 +72,6 @@ async function init() {
             listenForRefocus(() => guide.reload());
 
             setState({
-                attached: true,
                 user: String(guide.user),
                 type
             });
@@ -84,28 +79,16 @@ async function init() {
         case "map-selector":
             await FMG_MapSelector.setup(window);
 
-            setState({
-                attached: true,
-                type
-            });
+            setState({ type });
             break;
         case "home":
-            state.attached = true;
-
-            setState({
-                attached: true,
-                type
-            });
+            setState({ type });
             break;
         case "unknown":
             logger.warn(`Page type ${type}, not attaching content script`);
             break;
     }
 }
-
-channel.onMessage("toastrError", ({ message }) => {
-    toastr.error(message);
-});
 
 channel.onMessage("getState", () => {
     return state;
