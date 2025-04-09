@@ -1,0 +1,76 @@
+.tab-view {
+    margin: 0 5px;
+    border-radius: 5px;
+    display: grid;
+    grid-template-rows: 50px auto;
+    overflow: hidden;
+
+    .tab-view-tabs {
+        margin-top: 5px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding-bottom: 5px;
+        gap: 5px;
+        border-bottom: 1px solid var(--border);
+
+        .tab-view-tab {
+            color: var(--color);
+            background-color: var(--item);
+            border: 1px solid var(--item);
+            border-radius: 5px;
+            padding: 0 5px 5px 5px;
+            margin: 0;
+
+            &.active {
+                color: var(--active);
+            }
+
+            &:hover {
+                border-color: var(--active);
+            }
+        }
+    }
+
+    .tab-view-page-container {
+        display: grid;
+        overflow-y: auto;
+        max-height: 100%;
+        margin: 10px 0;
+
+        .tab-view-page-wrapper {
+            opacity: 0;
+            pointer-events: none;
+
+            grid-column: 1;
+            grid-row: 1;
+
+            &.show {
+                opacity: 1;
+                pointer-events: all;
+            }
+
+            .tab-view-page {
+                max-height: 100%;
+            }
+        }
+
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: var(--background);
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 5px;
+        }
+          
+        /* Handle on hover */
+        &::-webkit-scrollbar-thumb:hover {
+            background: var(--active);
+        }
+    }
+}
