@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "target": "ES2020",
+        "module": "CommonJS",
+        "baseUrl": "./src",
+        "jsx": "react-native",
+        "allowUmdGlobalAccess": true,
+        "paths": {
+            "@content/*": ["content/*"],
+            "@extension/*": ["extension/*"],
+            "@popup/*": ["popup/*"],
+            "@background/*": ["background/*"],
+            "@shared/*": ["shared/*"],
+            "@fmg/*": ["fmg/*"],
+            "@font/*": ["font/*"],
+            "@css/*": ["css/*"],
+            "@components/*": ["components/*"],
+            "@/*": ["*"],
+            "@tests/data/*": ["../tests/data/*"],
+            "@tests/mocks/*": ["../tests/mocks/*"]
+        },
+        "typeRoots": ["./node_modules/@types", "./src/@types"]
+    },
+    "include": ["src/**/*"],
+}
