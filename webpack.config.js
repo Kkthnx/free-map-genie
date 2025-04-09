@@ -115,7 +115,7 @@ export default (env) => {
         entry: {
             "extension": "./src/extension/index.ts",
             "content": "./src/content/index.ts",
-            "popup/index": "./src/popup/index.ts",
+            "popup/index": "./src/popup/index.tsx",
             "background": "./src/background/index.ts",
             "storage": "./src/storage/index.ts",
         },

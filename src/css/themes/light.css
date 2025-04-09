@@ -1,4 +1,4 @@
-.theme-provider[theme="light"] {
+.theme-provider[data-theme="light"] {
     --color: #363636;
     --color-light: #414141;
 
@@ -6,7 +6,7 @@
     --tab-background: #2b2b2b;
     --border: #b6b6b6;
 
-    --active: #3b9dde;
+    --active: #a73f3f;
     --item: #e7e7e7;
 
     --checkbox: #c5c5c5;

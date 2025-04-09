@@ -1,0 +1,11 @@
+.connection {
+    color: var(--red);
+
+    &.connected {
+        color: var(--green)
+    }
+
+    i {
+        cursor: pointer;
+    }
+}
