@@ -7,6 +7,7 @@ import { FMG_ImportHelper } from "@fmg/storage/data/import";
 import { FMG_ExportHelper } from "@fmg/storage/data/export";
 
 import { getDiffForDicyById } from "@shared/utils";
+import type FMG_Data from "@fmg/storage/data";
 
 export class FMG_MapManager {
     public window: Window;
@@ -308,18 +309,13 @@ export class FMG_MapManager {
      * This makes it possible to open multiple tabs of the same map at the same time.
      * Or if you have the map op and guide at the same time.
      */
-    public async reload() {
+    public async reload(previousData?: FMG_Data) {
         // Store last state notes.
-        const previousData = this.storage.data;
+        previousData ??= this.storage.data.snapshot();
 
         // Refetch storage data.
         await this.storage.load();
         const currentData = this.storage.data;
-
-        logger.group("MapManager reload");
-        logger.raw("previous data: ", previousData);
-        logger.raw("current data: ", currentData);
-        logger.groupEnd();
 
         // Mark locations
         const diffLocations = getDiffForDicyById(previousData.locations, currentData.locations);
@@ -330,6 +326,13 @@ export class FMG_MapManager {
         const diffCategories = getDiffForDicyById(previousData.categories, currentData.categories);
         this.trackCategories(diffCategories.added, true);
         this.trackCategories(diffCategories.removed, false);
+
+        logger.group("MapManager reload");
+        logger.raw("previous data:", previousData);
+        logger.raw("current data:", currentData);
+        logger.raw("diff locations:", diffLocations);
+        logger.raw("diff categories:", diffCategories);
+        logger.groupEnd();
 
         // Update notes, by removing previous notes and adding the current notes.        
         previousData.notes.forEach(note => this.removeNote(note));
@@ -356,16 +359,61 @@ export class FMG_MapManager {
     /**
      * Import data from a file.
      */
-    public async import(json: string) {
-        await FMG_ImportHelper.import(this.storage.driver, this.storage.keyData, json);
-        await this.reload();
+    public async import() {
+        const json = await FMG_ImportHelper.showFilePicker();
+        if (json != undefined) {
+            await FMG_ImportHelper.import(this.storage.driver, this.storage.keyData, json);
+            await this.reload();
+        }
     }
 
     /**
      * Export data from a file.
      */
     public async export() {
-        return FMG_ExportHelper.export(this.storage.driver, this.storage.keyData);
+        const data = await FMG_ExportHelper.export(this.storage.driver, this.storage.keyData);
+        if (data != undefined) {
+            await FMG_ExportHelper.saveFile(data);
+        }
+    }
+
+    /**
+     * Clear data
+     */
+    public async clear() {
+        if (confirm("Are you sure you want to clear all data?")) {
+            await this.storage.clearCurrentMap();
+            await this.reload();
+        }
+    }
+
+    /**
+     * Import mapgenie account
+     */
+    public async importMapgenieAccount() {
+        try {
+            if (!this.window.fmgMapgenieAccountData) throw new Error("No mapgenie account data found.");
+
+            if (!confirm("Trying to import mapgenie account data!\nThis will append mapgenie account data to current data.\nDo you want to continue.")) {
+                return;
+            }
+
+            const previousData = this.storage.data.snapshot();
+            
+            for (const id of this.window.fmgMapgenieAccountData.locationIds) {
+                this.storage.data.locations[id] = true;
+            }
+    
+            for (const id of this.window.fmgMapgenieAccountData.categoryIds) {
+                this.storage.data.categories[id] = true;
+            }
+    
+            await this.storage.data.save();
+    
+            await this.reload(previousData);
+        } catch (err) {
+            toastr.error(String(err));
+        }
     }
 
     public async clearPresets() {

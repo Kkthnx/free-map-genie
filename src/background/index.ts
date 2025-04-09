@@ -6,6 +6,7 @@ import "./api";
 declare global {
     interface BackgroundChannel {
         settingsChanged(data: { settings: FMG.Extension.Settings }): void;
+        reloadActiveTab(): boolean;
     }
 }
 
@@ -68,6 +69,16 @@ channel.onMessage("settingsChanged", ({ settings }) => {
             removeRuleIds: [BLOCK_MAP_SCRIPT_RULE.id],
         });
     }
+});
+
+channel.onMessage("reloadActiveTab", async () => {
+    const tabs = await chrome.tabs.query({active: true, currentWindow: true}, );
+    const tabId = tabs[0]?.id;
+    if (tabId !== undefined) {
+        await chrome.tabs.reload(tabId);
+        return true;
+    }
+    return false;
 });
 
 async function init() {

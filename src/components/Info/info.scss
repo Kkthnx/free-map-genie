@@ -1,0 +1,37 @@
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    .info-item {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+        font-weight: 400;
+
+        & > * {
+            background-color: var(--item);
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        & > h4 {
+            margin: 0;
+            font-weight: 400;
+            text-align: center;
+        }
+
+        .disconnected {
+            color: var(--red, red);
+            text-shadow: 0 0 5px var(--red, red);
+        }
+        
+        .connected {
+            color: var(--green, green);
+            text-shadow: 0 0 5px var(--green, green);
+        }
+    }
+}

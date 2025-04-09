@@ -8,6 +8,8 @@
         "target": "ES2020",
         "module": "CommonJS",
         "baseUrl": "./src",
+        "jsx": "react-native",
+        "allowUmdGlobalAccess": true,
         "paths": {
             "@content/*": ["content/*"],
             "@extension/*": ["extension/*"],

@@ -1,5 +1,5 @@
 import channel from "@shared/channel/offscreen";
-import Options from "options.json";
+import { Options, getDefaultSettings } from "@fmg/options";
 
 declare global {
     export interface OffscreenChannel {
@@ -12,12 +12,6 @@ declare global {
         getSettings(): FMG.Extension.Settings;
         setSettings(data: { settings?: FMG.Extension.Settings }): void;
     }
-}
-
-function getDefaultSettings() {
-    return Object.fromEntries(
-        Options.map((option) => [option.name, option.value])
-    ) as any as FMG.Extension.Settings;
 }
 
 function getBookmarks() {
