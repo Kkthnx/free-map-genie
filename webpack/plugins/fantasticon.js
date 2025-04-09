@@ -56,7 +56,6 @@ export default class FantasticonPlugin {
             name: this.pluginName,
             baseDataPath: "options",
         });
-        console.log("apple");
     }
 
     /**
