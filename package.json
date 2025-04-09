@@ -25,12 +25,9 @@
         "decompress": "^4.2.1",
         "dotenv": "^16.3.1",
         "eslint": "^8.46.0",
-        "glob-loader": "^0.3.0",
         "gnirts": "^1.1.8",
         "gnirts-loader": "^1.0.8",
         "html-webpack-plugin": "^5.5.3",
-        "ifdef-loader": "^2.3.2",
-        "import-glob": "^1.5.0",
         "jest": "^29.6.2",
         "jest-environment-node": "^29.7.0",
         "jsdom": "^22.1.0",
@@ -44,7 +41,6 @@
         "ts-node": "^10.9.1",
         "tsconfig-paths-webpack-plugin": "^4.1.0",
         "typescript": "^5.1.6",
-        "vue-loader": "^17.2.2",
         "web-ext-plugin": "^2.8.1",
         "webpack": "^5.88.2",
         "webpack-cli": "^5.1.4",
@@ -71,8 +67,7 @@
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "tiny-uid": "^1.1.2",
-        "toastr": "^2.1.4",
-        "vue": "^3.3.4"
+        "toastr": "^2.1.4"
     },
     "packageManager": "yarn@1.22.22"
 }
