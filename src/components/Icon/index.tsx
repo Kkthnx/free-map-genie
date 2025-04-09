@@ -1,4 +1,4 @@
-import "@css/fmg-font.css";
+// import "@css/fmg-font.css";
 import "./icon.css";
 
 import { className } from "@shared/react";

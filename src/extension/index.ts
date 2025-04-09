@@ -1,5 +1,4 @@
 import channel from "@shared/channel/extension";
-import { getPageType, PageType } from "@fmg/page";
 
 declare global {
     export interface ExtensionChannel {
@@ -67,7 +66,8 @@ async function init() {
         return;
     }
 
-    injectLink(chrome.runtime.getURL("content.css"));
+    injectLink(chrome.runtime.getURL("css/content.css"));
+    injectLink(chrome.runtime.getURL("font/fmg-font.css"));
     injectScript(chrome.runtime.getURL("content.js"));
 }
 
