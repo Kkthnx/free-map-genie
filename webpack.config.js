@@ -1,9 +1,9 @@
-import path from "path";
-import url from "url";
-import fs from "fs";
+import "dotenv/config";
 
-import dotenv from "dotenv";
-dotenv.config();
+import path from "node:path";
+import fs from "node:fs";
+
+import { FontAssetType, ASSET_TYPES } from "fantasticon";
 
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import TsconfigPathsPlugin from "tsconfig-paths-webpack-plugin";
@@ -11,22 +11,25 @@ import WebpackExtensionManifestPlugin from "webpack-extension-manifest-plugin";
 import WebExtPlugin from "web-ext-plugin";
 import CopyPlugin from "copy-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
-import { SwcMinifyWebpackPlugin } from "swc-minify-webpack-plugin";
-import { VueLoaderPlugin } from "vue-loader";
+// import { SwcMinifyWebpackPlugin } from "swc-minify-webpack-plugin";
+import TerserPlugin from "terser-webpack-plugin";
+import FantasticonPlugin from "./webpack/plugins/fantasticon.js";
+
+const packageJson = JSON.parse(fs.readFileSync("./package.json", "utf-8"));
 
 import webpack from "webpack";
-const { DefinePlugin, ProvidePlugin } = webpack;
-
-const packageJson = JSON.parse(
-    fs.readFileSync("./package.json", { encoding: "utf-8" }).toString()
-);
 
 /**
- * Get the environment variable from the webpack env
- * @param {Record<string, any>} env
- * @param {string} name
- * @param {string[]} matches
- * @returns The value of the environment variable
+ * @typedef {Record<string, any>} Env;
+ * @typedef {"dev" | "prod"} ShortMode;
+ * @typedef {"development" | "production"} Mode;
+ */
+
+/**
+ * @param {Env} env 
+ * @param {string} name 
+ * @param {string[]} matches 
+ * @returns {string}
  */
 function getEnvVar(env, name, matches) {
     const value = env[name];
@@ -44,28 +47,29 @@ function getEnvVar(env, name, matches) {
 }
 
 /**
- * Parse the mode from the webpack env
- * @param {string} mode The mode to parse
- * @returns The parsed mode
+ * @param {ShortMode | Mode | undefined} mode
+ * @returns {Mode}
  */
 function parseMode(mode) {
-    return (
-        { dev: "development", prod: "production" }[mode] ||
-        mode ||
-        "development"
-    );
+    if (mode === "dev" || mode === undefined) {
+        return "development";
+    } 
+
+    if (mode === "prod") {
+        return "production";
+    }
+
+    return mode;
 }
 
 /**
- * Create the path to the dist folder
- * @param {string} browser The browser to create the path for
- * @param {string} mode The mode to create the path for
- * @returns The path to the dist folder
+ * @param {string} browser 
+ * @param {Mode} mode 
+ * @returns {string}
  */
 function distPath(browser, mode) {
-    const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
     return path.resolve(
-        __dirname,
+        import.meta.dirname,
         "dist",
         `fmg-${browser}-v${packageJson.version}${
             mode === "development" ? "-dev" : ""
@@ -73,22 +77,35 @@ function distPath(browser, mode) {
     );
 }
 
-/** @returns {import("webpack").Configuration} */
+/**
+ * @param {string} browser 
+ * @param {string} mode 
+ * @returns {string}
+ */
+function distName(browser, mode) {
+    return `fmg-${browser}-v${packageJson.version}` +
+        (mode === "production"
+            ? browser === "chrome"
+                ? ".zip"
+                : ".xpi"
+            : "");
+}
+
+/**
+ * @param {Env} env
+ * @returns {webpack.Configuration}
+ */
 export default (env) => {
-    const hostname = process.env.HOSTNAME || "localhost";
-    const port = JSON.parse(process.env.PORT || 3000);
     const watch = env.WEBPACK_WATCH || false;
 
     const browser = getEnvVar(env, "browser", ["chrome", "firefox"]);
-    const mode = parseMode(getEnvVar(env, "mode", ["dev", "prod"]));
+    const mode = parseMode(getEnvVar(env, "mode", ["dev", "prod", "development", "production"]));
 
     const isDev = mode !== "production";
 
     const dist = distPath(browser, mode);
 
     const GLOBALS = {
-        __HOSTNAME__: JSON.stringify(hostname),
-        __PORT__: port,
         __WATCH__: watch,
         __BROWSER__: JSON.stringify(browser),
         __MODE__: JSON.stringify(mode),
@@ -100,18 +117,12 @@ export default (env) => {
 
     const files = [
         { from: "./src/icons", to: "icons" },
-        { from: "./src/font", to: "font" }
     ];
-
-    // Add the blocklist for chrome
-    // if (browser === "chrome") {
-    //     files.push({ from: "./src/rules.json", to: "rules.json" });
-    // }
 
     // Configure the webpack
     return {
         mode,
-        devtool: isDev ? "cheap-module-source-map" : undefined,
+        devtool: isDev ? "inline-cheap-module-source-map" : false,
         entry: {
             "extension": "./src/extension/index.ts",
             "content": "./src/content/index.ts",
@@ -120,16 +131,19 @@ export default (env) => {
             "storage": "./src/storage/index.ts",
         },
         output: {
-            path: dist
+            path: dist,
+            chunkFilename: "chunks/[name].[contenthash].js",
         },
         resolve: {
-            extensions: [".tsx", ".ts", ".jsx", ".js", ".vue", ".json"],
-            alias: {
-                vue$: isDev
-                    ? "vue/dist/vue.runtime.esm-browser.js"
-                    : "vue/dist/vue.runtime.esm-browser.prod.js",
-            },
-            plugins: [new TsconfigPathsPlugin()]
+            extensions: [".tsx", ".ts", ".jsx", ".js", ".json"],
+            plugins: [
+                new TsconfigPathsPlugin({
+                    configFile: path.resolve("tsconfig.web.json"),
+                })
+            ],
+        },
+        resolveLoader: {
+            modules: ["node_modules", "webpack/loaders"],
         },
         module: {
             rules: [
@@ -137,19 +151,8 @@ export default (env) => {
                     test: /\.(ts|tsx)$/,
                     exclude: /node_modules/,
                     use: [
-                        "import-glob",
                         "gnirts-loader",
-                        {
-                            loader: "ifdef-loader",
-                            options: {
-                                DEBUG: isDev,
-                                BROWSER: browser,
-                                VERSION: packageJson.version,
-                                CHROME: browser === "chrome",
-                                FIREFOX: browser === "firefox"
-                            }
-                        },
-                        path.resolve("./webpack/loaders/inject-globals.js"),
+                        "inject-globals",
                         {
                             loader: "swc-loader",
                             options: {
@@ -168,26 +171,8 @@ export default (env) => {
                     ],
                 },
                 {
-                    test: /\.vue$/,
-                    loader: "vue-loader"
-                },
-                {
-                    test: /\.css$/,
+                    test: /\.(s[ac]ss|css)$/,
                     use: [
-                        // "style-loader",
-                        MiniCssExtractPlugin.loader,
-                        {
-                            loader: "css-loader",
-                            options: {
-                                url: false
-                            }
-                        }
-                    ]
-                },
-                {
-                    test: /\.s[ac]ss/,
-                    use: [
-                        // "style-loader",
                         MiniCssExtractPlugin.loader,
                         {
                             loader: "css-loader",
@@ -201,9 +186,23 @@ export default (env) => {
             ]
         },
         plugins: [
+            // Fantasticon genrate font icons
+            new FantasticonPlugin({
+                config: {
+                    name: "fmg-font",
+                    prefix: "fmg-icon",
+                    tag: "i",
+                    inputDir: "icons",
+                    outputDir: "[dist]/font",
+                    descent: 50,
+                    fontTypes: [FontAssetType.TTF, FontAssetType.WOFF, FontAssetType.WOFF2],
+                    assetTypes: [ASSET_TYPES.CSS],
+                },
+            }),
+            
             // Extract the css to a separate file
             new MiniCssExtractPlugin({
-                chunkFilename: "test.css"
+                filename: "css/[name].css",
             }),
 
             // Popup html file
@@ -213,32 +212,25 @@ export default (env) => {
                 template: "./src/popup/index.html"
             }),
 
-            browser === "chrome"
-                ? new HtmlWebpackPlugin({
-                    chunks: [],
-                    filename: "storage.html",
-                    template: "./src/storage/index.html"
-                }) 
-                : new HtmlWebpackPlugin({
-                    chunks: ["background"],
-                    filename: "background.html",
-                    template: "./src/storage/index.html"
-                }),
+            new HtmlWebpackPlugin({
+                chunks: browser === "chrome" ? ["background"] : [],
+                filename: browser === "chrome" ? "storage.html" : "background.html",
+                template: "./src/storage/index.html"
+            }),
 
             // Provide global modules
-            new ProvidePlugin({
-                logger: [path.resolve(import.meta.dirname, "src", "fmg", "logger.ts"), "default"],
+            new webpack.ProvidePlugin({
+                $: "jquery",
+                jQuery: "jquery",
+                logger: [path.resolve(import.meta.dirname, "src/fmg/logger.ts"), "default"],
                 React: "react"
             }),
 
             // Provide the global variables
-            new DefinePlugin(GLOBALS),
+            new webpack.DefinePlugin(GLOBALS),
 
             // Static files to copy to the dist folder
             new CopyPlugin({ patterns: files }),
-
-            // Vue loader
-            new VueLoaderPlugin(),
 
             // Generate the manifest
             new WebpackExtensionManifestPlugin({
@@ -253,13 +245,7 @@ export default (env) => {
             new WebExtPlugin({
                 sourceDir: dist,
                 artifactsDir: "./dist",
-                outputFilename:
-                    `fmg-${browser}-v${packageJson.version}` +
-                    (mode === "production"
-                        ? browser === "chrome"
-                            ? ".zip"
-                            : ".xpi"
-                        : ""),
+                outputFilename: distName(browser, mode),
                 overwriteDest: true,
                 target: browser === "chrome" ? "chromium" : "firefox-desktop",
                 devtools: true,
@@ -274,15 +260,20 @@ export default (env) => {
                 buildPackage: mode === "production"
             })
         ],
+
         watch,
         watchOptions: {
             ignored: /node_modules/,
             aggregateTimeout: 300,
             poll: 1000
         },
+        
         optimization: {
+            splitChunks: {
+                filename: "chunks/[name].js",
+            },
             minimize: !isDev,
-            minimizer: [new SwcMinifyWebpackPlugin()]
+            minimizer: [new TerserPlugin()]
         }
-    };
+    }
 };

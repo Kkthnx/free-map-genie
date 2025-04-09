@@ -25,7 +25,7 @@
     ],
     "web_accessible_resources": [
         {
-            "resources": ["content.js", "content.css", "font/*"],
+            "resources": ["content.js", "css/*", "font/*"],
             "matches": ["<all_urls>"]
         }
     ],
