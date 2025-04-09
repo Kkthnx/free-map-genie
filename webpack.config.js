@@ -3,13 +3,17 @@ import "dotenv/config";
 import path from "node:path";
 import fs from "node:fs";
 
+import { FontAssetType, ASSET_TYPES } from "fantasticon";
+
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import TsconfigPathsPlugin from "tsconfig-paths-webpack-plugin";
 import WebpackExtensionManifestPlugin from "webpack-extension-manifest-plugin";
 import WebExtPlugin from "web-ext-plugin";
 import CopyPlugin from "copy-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
-import { SwcMinifyWebpackPlugin } from "swc-minify-webpack-plugin";
+// import { SwcMinifyWebpackPlugin } from "swc-minify-webpack-plugin";
+import TerserPlugin from "terser-webpack-plugin";
+import FantasticonPlugin from "./webpack/plugins/fantasticon.js";
 
 const packageJson = JSON.parse(fs.readFileSync("./package.json", "utf-8"));
 
@@ -113,13 +117,12 @@ export default (env) => {
 
     const files = [
         { from: "./src/icons", to: "icons" },
-        { from: "./src/font", to: "font" }
     ];
 
     // Configure the webpack
     return {
         mode,
-        devtool: isDev ? "cheap-module-source-map" : undefined,
+        devtool: isDev ? "inline-cheap-module-source-map" : false,
         entry: {
             "extension": "./src/extension/index.ts",
             "content": "./src/content/index.ts",
@@ -128,7 +131,8 @@ export default (env) => {
             "storage": "./src/storage/index.ts",
         },
         output: {
-            path: dist
+            path: dist,
+            chunkFilename: "chunks/[name].[contenthash].js",
         },
         resolve: {
             extensions: [".tsx", ".ts", ".jsx", ".js", ".json"],
@@ -182,9 +186,23 @@ export default (env) => {
             ]
         },
         plugins: [
+            // Fantasticon genrate font icons
+            new FantasticonPlugin({
+                config: {
+                    name: "fmg-font",
+                    prefix: "fmg-icon",
+                    tag: "i",
+                    inputDir: "icons",
+                    outputDir: "[dist]/font",
+                    descent: 50,
+                    fontTypes: [FontAssetType.TTF, FontAssetType.WOFF, FontAssetType.WOFF2],
+                    assetTypes: [ASSET_TYPES.CSS],
+                },
+            }),
+            
             // Extract the css to a separate file
             new MiniCssExtractPlugin({
-                chunkFilename: "test.css"
+                filename: "css/[name].css",
             }),
 
             // Popup html file
@@ -194,20 +212,16 @@ export default (env) => {
                 template: "./src/popup/index.html"
             }),
 
-            browser === "chrome"
-                ? new HtmlWebpackPlugin({
-                    chunks: [],
-                    filename: "storage.html",
-                    template: "./src/storage/index.html"
-                }) 
-                : new HtmlWebpackPlugin({
-                    chunks: ["background"],
-                    filename: "background.html",
-                    template: "./src/storage/index.html"
-                }),
+            new HtmlWebpackPlugin({
+                chunks: browser === "chrome" ? ["background"] : [],
+                filename: browser === "chrome" ? "storage.html" : "background.html",
+                template: "./src/storage/index.html"
+            }),
 
             // Provide global modules
             new webpack.ProvidePlugin({
+                $: "jquery",
+                jQuery: "jquery",
                 logger: [path.resolve(import.meta.dirname, "src/fmg/logger.ts"), "default"],
                 React: "react"
             }),
@@ -246,15 +260,20 @@ export default (env) => {
                 buildPackage: mode === "production"
             })
         ],
+
         watch,
         watchOptions: {
             ignored: /node_modules/,
             aggregateTimeout: 300,
             poll: 1000
         },
+        
         optimization: {
+            splitChunks: {
+                filename: "chunks/[name].js",
+            },
             minimize: !isDev,
-            minimizer: [new SwcMinifyWebpackPlugin()]
+            minimizer: [new TerserPlugin()]
         }
     }
 };
