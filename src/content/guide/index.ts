@@ -1,5 +1,5 @@
 import { waitForCallback, waitForGlobals } from "@shared/async";
-import { getElement } from "@shared/dom";
+import { getElement, documentLoaded } from "@shared/dom";
 
 import { FMG_Map } from "@content/map";
 import { FMG_CheckboxManager } from "./checkbox-manager";
@@ -38,9 +38,8 @@ export class FMG_Guide {
     private async waitForMapElementLoaded(): Promise<HTMLIFrameElement> {
         const mapElement = await getElement<HTMLIFrameElement>("iframe[src*='/maps/']", this.window, 10000);
         await waitForCallback(() => !!mapElement.contentWindow, 10000);
-
         await waitForCallback(() => !!(mapElement.contentWindow as any).fmgMapManager, 15000);
-
+        await documentLoaded(mapElement.contentWindow!, 10000);
         return mapElement;
     }
 
@@ -49,6 +48,7 @@ export class FMG_Guide {
         const mapManager = (contentWindow as any).fmgMapManager;
 
         this._miniMap = new FMG_Map(contentWindow, mapManager);
+
         this.checkboxManager.mapManager = this._miniMap.mapManager;
         this._miniMap.mapManager.on("fmg-location", (e) => {
             this.checkboxManager.mark(e.detail.id, e.detail.marked);
@@ -70,9 +70,6 @@ export class FMG_Guide {
         this.checkboxManager.reload();
     }
 
-    /**
-     * Setup the guide
-     */
     public async setup(): Promise<void> {
         try {
             this._mapElement = await this.waitForMapElementLoaded();

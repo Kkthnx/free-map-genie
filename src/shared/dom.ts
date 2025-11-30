@@ -1,41 +1,38 @@
 import { timeout, waitForCallback } from "./async";
 
-function resolveParent(parent?: Window | HTMLElement) {
-    if (!parent) {
-        return { root: document, target: document };
-    }
-
-    if (parent instanceof Window) {
-        const doc = parent.document;
-        return { root: doc, target: doc.body ?? doc };
-    }
-
-    return { root: parent, target: parent };
+function asElement(parent?: Window | HTMLElement) {
+    return parent !== undefined
+        ? parent instanceof HTMLElement
+            ? parent
+            : parent.document
+        : document;
 }
 
-/**
- * Waits for an element to appear in the DOM using MutationObserver.
- */
 export function getElement<T extends HTMLElement>(
     selector: string,
     parent?: Window | HTMLElement,
     timeoutTime: number = -1
 ): Promise<T> {
-    const { root, target } = resolveParent(parent);
-    const element = root.querySelector(selector);
+    const parentElement = asElement(parent);
+    const element = parentElement.querySelector(selector);
     if (element) return Promise.resolve(element as T);
+
+    if (!parentElement) return Promise.reject(new Error("Parent element not found"));
 
     return timeout(
         new Promise<T>((resolve) => {
             const observer = new MutationObserver(() => {
-                const node = root.querySelector(selector);
+                const node = parentElement.querySelector(selector);
                 if (node) {
                     observer.disconnect();
                     resolve(node as T);
                 }
             });
 
-            observer.observe(target, { childList: true, subtree: true });
+            observer.observe(
+                parentElement instanceof Window ? parentElement.document : parentElement,
+                { childList: true, subtree: true }
+            );
         }),
         timeoutTime,
         `Failed to get element ${selector}.`
@@ -47,24 +44,27 @@ export function getElements<T extends HTMLElement[]>(
     parent?: Window | HTMLElement,
     timeoutTime: number = -1
 ): Promise<T> {
-    const { root, target } = resolveParent(parent);
-    const elements = root.querySelectorAll(selector);
-    if (elements.length) return Promise.resolve([...elements] as T);
+    const parentElement = asElement(parent);
+    const elements = parentElement.querySelectorAll(selector);
+    if (elements.length > 0) return Promise.resolve([...elements] as T);
 
     return timeout(
         new Promise<T>((resolve) => {
             const observer = new MutationObserver(() => {
-                const nodes = root.querySelectorAll(selector);
-                if (nodes.length) {
+                const nodes = parentElement.querySelectorAll(selector);
+                if (nodes.length > 0) {
                     observer.disconnect();
                     resolve([...nodes] as T);
                 }
             });
 
-            observer.observe(target, { childList: true, subtree: true });
+            observer.observe(
+                parentElement instanceof Window ? parentElement.document : parentElement,
+                { childList: true, subtree: true }
+            );
         }),
         timeoutTime,
-        `Failed to get elements ${selector}.`
+        `Failed to get element ${selector}.`
     );
 }
 
