@@ -271,9 +271,8 @@ export class FMG_Map {
     public async setup(): Promise<void> {
         const settings = await channel.offscreen.getSettings();
 
-        if (!this.window.isMini) {
-            this.cleanupProUpgradeAds();
-        }
+        // Fix: Always run this, even if isMini is true
+        this.cleanupProUpgradeAds();
 
         window.fmgMapManager = this.mapManager;
 

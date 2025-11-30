@@ -41,7 +41,11 @@ export default class AdBlocker {
     }
 
     private static removeUpgradeProAd(): number {
-        return $("#blobby-left").remove().length;
+        return (
+            $("#blobby-left").remove().length +
+            $("#button-upgrade").remove().length +
+            $(".w-full.text-center.p-2.bg-white").has("a[href*='/upgrade']").remove().length
+        );
     }
 
     private static removeBlueKai(): number {

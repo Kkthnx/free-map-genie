@@ -39,12 +39,26 @@ export class FMG_Guide {
     }
 
     public async cleanupProAds() {
-        getElement("#button-upgrade", this.window, 5000).then(elem => elem.remove());
-        getElement("blockquote", this.window, 5000).then(elem => elem.remove());
+        // Updated to remove various forms of "Upgrade to Pro" buttons/banners
+        const selectors = [
+            "#button-upgrade",
+            "blockquote", 
+            ".w-full.text-center.p-2.bg-white", // Catches the 'Upgrade to Pro' banner container
+            "a[href*='/upgrade']"
+        ];
+        
+        selectors.forEach(selector => {
+            // Try to find and remove elements, but don't error if they aren't there
+            getElement(selector, this.window, 1000)
+                .then(elem => elem.remove())
+                .catch(() => {}); 
+        });
     }
 
     private async waitForMapElementLoaded(): Promise<HTMLIFrameElement> {
-        const mapElement = await getElement<HTMLIFrameElement>("#sticky-map iframe", this.window, 10000);
+        // Fix: Changed selector from "#sticky-map iframe" to generic map iframe selector
+        // This ensures it works on guides where the map isn't in a sticky header.
+        const mapElement = await getElement<HTMLIFrameElement>("iframe[src*='/maps/']", this.window, 10000);
         await waitForCallback(() => !!mapElement.contentWindow, 10000);   
         await waitForGlobals(["mapData"], mapElement.contentWindow!, 10000);
         await documentLoaded(mapElement.contentWindow!, 10000);
@@ -79,29 +93,33 @@ export class FMG_Guide {
      * Setup the guide
      */
     public async setup(): Promise<void> {
-        this._mapElement = await this.waitForMapElementLoaded();
+        try {
+            this._mapElement = await this.waitForMapElementLoaded();
 
-        await this.setupMinimap();
-        this.loadData();
-        this.checkboxManager.reload();
-
-        // Listen for src changes
-        this.mapElement.addEventListener("load", async () => {
-            await this.waitForMapElementLoaded();
             await this.setupMinimap();
-            await this.miniMap.mapManager.reload();
-        });
+            this.loadData();
+            this.checkboxManager.reload();
 
-        // Wait for axios to load
-        await waitForGlobals(["axios"], window, 10000);
+            // Listen for src changes
+            this.mapElement.addEventListener("load", async () => {
+                await this.waitForMapElementLoaded();
+                await this.setupMinimap();
+                await this.miniMap.mapManager.reload();
+            });
 
-        // Cleanup pro ads, but don't wait for it
-        this.cleanupProAds().catch();
+            // Wait for axios to load
+            await waitForGlobals(["axios"], window, 10000);
 
-        // Setup the api filter
-        const apiFilter = FMG_ApiFilter.install(window);
-        setupApiFilter(apiFilter, this.miniMap.mapManager);
+            // Cleanup pro ads
+            this.cleanupProAds().catch();
 
-        logger.log("Guide setup complete");
+            // Setup the api filter
+            const apiFilter = FMG_ApiFilter.install(window);
+            setupApiFilter(apiFilter, this.miniMap.mapManager);
+
+            logger.log("Guide setup complete");
+        } catch (e) {
+            logger.error("FMG Guide setup failed", e);
+        }
     }
 }
