@@ -2,12 +2,17 @@ import channel from "@shared/channel/content";
 
 export default class FMG_GamesData {
     private static data?: MG.API.Game[];
+    private static loadingPromise?: Promise<void>;
 
     public static async get(gameId: Id): Promise<MG.API.Game>;
     public static async get(): Promise<MG.API.Game[]>;
     public static async get(gameId?: Id): Promise<MG.API.Game[] | MG.API.Game> {
-        // Load data if its not defined
-        if (this.data == undefined)  await this.load();
+        if (this.data === undefined) {
+            if (!this.loadingPromise) {
+                this.loadingPromise = this.load();
+            }
+            await this.loadingPromise;
+        }
 
         if (!gameId) {
             // If we did not specify a game id, return all games
@@ -36,6 +41,10 @@ export default class FMG_GamesData {
     }
 
     private static async load() {
-        this.data = await channel.background.games();
+        try {
+            this.data = await channel.background.games();
+        } finally {
+            this.loadingPromise = undefined;
+        }
     }
 }

@@ -1,30 +1,45 @@
-import { sleep, timeout, waitForCallback } from "./async";
+import { timeout, waitForCallback } from "./async";
 
-function asElement(parent?: Window | HTMLElement) {
-    return parent !== undefined 
-        ? parent instanceof HTMLElement
-            ? parent
-            : parent.document
-        : document;
+function resolveParent(parent?: Window | HTMLElement) {
+    if (!parent) {
+        return { root: document, target: document };
+    }
+
+    if (parent instanceof Window) {
+        const doc = parent.document;
+        return { root: doc, target: doc.body ?? doc };
+    }
+
+    return { root: parent, target: parent };
 }
 
+/**
+ * Waits for an element to appear in the DOM using MutationObserver.
+ */
 export function getElement<T extends HTMLElement>(
     selector: string,
     parent?: Window | HTMLElement,
     timeoutTime: number = -1
 ): Promise<T> {
-    return timeout((async () => {
-        const parentElement = asElement(parent);
+    const { root, target } = resolveParent(parent);
+    const element = root.querySelector(selector);
+    if (element) return Promise.resolve(element as T);
 
-        let element = parentElement.querySelector(selector);
+    return timeout(
+        new Promise<T>((resolve) => {
+            const observer = new MutationObserver(() => {
+                const node = root.querySelector(selector);
+                if (node) {
+                    observer.disconnect();
+                    resolve(node as T);
+                }
+            });
 
-        while (element === null) {
-            await sleep(100);
-            element = parentElement.querySelector(selector);
-        }
-
-        return element as T;
-    })(), timeoutTime, `Failed to get element ${selector}.`);
+            observer.observe(target, { childList: true, subtree: true });
+        }),
+        timeoutTime,
+        `Failed to get element ${selector}.`
+    );
 }
 
 export function getElements<T extends HTMLElement[]>(
@@ -32,18 +47,25 @@ export function getElements<T extends HTMLElement[]>(
     parent?: Window | HTMLElement,
     timeoutTime: number = -1
 ): Promise<T> {
-    return timeout((async () => {
-        const parentElement = asElement(parent);
+    const { root, target } = resolveParent(parent);
+    const elements = root.querySelectorAll(selector);
+    if (elements.length) return Promise.resolve([...elements] as T);
 
-        let elements = parentElement.querySelectorAll(selector);
+    return timeout(
+        new Promise<T>((resolve) => {
+            const observer = new MutationObserver(() => {
+                const nodes = root.querySelectorAll(selector);
+                if (nodes.length) {
+                    observer.disconnect();
+                    resolve([...nodes] as T);
+                }
+            });
 
-        while (!elements.length) {
-            await sleep(100);
-            elements = parentElement.querySelectorAll(selector);
-        }
-
-        return [...elements] as T;
-    })(), timeoutTime, `Failed to get element ${selector}.`);
+            observer.observe(target, { childList: true, subtree: true });
+        }),
+        timeoutTime,
+        `Failed to get elements ${selector}.`
+    );
 }
 
 export function getElementWithXPath<T extends HTMLElement>(
@@ -51,16 +73,11 @@ export function getElementWithXPath<T extends HTMLElement>(
     win?: Window,
     timeoutTime: number = -1
 ): Promise<T> {
-    return timeout((async () => {
-        win = win ?? window;
-        let element = win.document.evaluate(xpath, win.document).iterateNext();
-        if (element !== null) return element as T;
-        while (element === null) {
-            await sleep(100);
-            element = win.document.evaluate(xpath, win.document).iterateNext();
-        }
-        return element as T;
-    })(), timeoutTime, `Failed to get element ${xpath}.`);
+    return waitForCallback(() => {
+        const doc = (win ?? window).document;
+        const result = doc.evaluate(xpath, doc, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+        return result.singleNodeValue as T;
+    }, timeoutTime);
 }
 
 export interface CreateScriptOptions {
