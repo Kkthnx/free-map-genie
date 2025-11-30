@@ -1,3 +1,5 @@
+/// <reference types="chrome" />
+
 import { createChannel } from "./internal";
 import { createTarget } from "./internal/target";
 import { decodeConnectionArgs, formatEndpointTargetName } from "./internal/connection-args";
@@ -90,6 +92,9 @@ chrome.runtime.onConnect.addListener((port) => {
     });
 
     port.onDisconnect.addListener(() => {
+        // Fix: Access lastError to suppress "Unchecked runtime.lastError" on the background side
+        const _ = chrome.runtime.lastError;
+
         if (connMap.get(connArgs.endpointName)?.fingerprint === connArgs.fingerprint) {
             connMap.delete(connArgs.endpointName);
 

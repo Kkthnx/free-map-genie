@@ -1,3 +1,5 @@
+/// <reference types="chrome" />
+
 import { encodeConnectionArgs } from "../connection-args";
 import type { ChannelDriver, DriverState, Fingerprint } from "../types";
 
@@ -14,6 +16,10 @@ export default function createPortChannelDriver(name: string, fingerprint: Finge
     };
 
     const connect = () => {
+        // Fix: Access lastError to suppress "Unchecked runtime.lastError" when this
+        // function is triggered by an unexpected port disconnection (e.g. bfcache).
+        const _ = chrome.runtime.lastError;
+
         state = "connected";
 
         port = chrome.runtime.connect({
@@ -33,6 +39,7 @@ export default function createPortChannelDriver(name: string, fingerprint: Finge
         listeners.clear();
         port.onMessage.removeListener(handleMessage);
         port.onDisconnect.removeListener(connect);
+        port.disconnect(); // Explicitly disconnect the port instance
     };
 
     return {
