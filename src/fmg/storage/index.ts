@@ -21,21 +21,18 @@ export class FMG_Storage {
         
         this.keyData = keyData;
 
-        if (this.window.mapData)
-        {
-            const maps = this.window.isMini
-                ? this.window.mapData.maps
-                : [this.window.mapData.map];
+        if (this.window.mapData) {
+            const maps = [this.window.mapData.map];
 
             this._data = Object.fromEntries(
                 maps.map((map) => {
                     const keyData: FMG.Storage.KeyData = {
                         ...this.keyData,
-                        mapId: map.id
+                        mapId: map.id,
                     };
                     return [
                         FMG_Keys.getV2Key(keyData),
-                        FMG_Data.new(keyData, this.driver)
+                        FMG_Data.new(keyData, this.driver),
                     ] as const;
                 })
             );
@@ -44,7 +41,7 @@ export class FMG_Storage {
 
     public get data(): FMG_Data {
         if (this.window.user) {
-            return this._data[FMG_Keys.getV2Key(this.keyData)];
+            return this._data[FMG_Keys.getV2Key(this.keyData)] ?? FMG_Data.empty();
         }
         return FMG_Data.empty();
     }

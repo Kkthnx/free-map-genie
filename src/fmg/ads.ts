@@ -13,47 +13,65 @@ export interface OnTickCallback {
 export default class AdBlocker {
     public static REMOVE_CHECK_INTERVAL = 2000;
 
-    public static totalAdsRemoveLastCoupleTicks: (number | undefined)[] = new Array(10).fill(undefined)
+    public static totalAdsRemoveLastCoupleTicks: (number | undefined)[] = new Array(10).fill(undefined);
 
     public static handle: number | null = null;
     public static autoStop: boolean = true;
 
     private static readonly onTickCallbacks: OnTickCallback[] = [];
 
+    private static removeBySelector(selector: string): number {
+        const elements = document.querySelectorAll(selector);
+        let count = 0;
+        elements.forEach((el) => {
+            el.remove();
+            count++;
+        });
+        return count;
+    }
+
     private static removeIframeAds(): number {
-        return $('iframe[name^="ifrm_"]').remove().length;
+        return this.removeBySelector('iframe[name^="ifrm_"]');
     }
 
     private static removeGoogleAds(): number {
         return (
-            $('iframe[name*="goog"]').remove().length +
-            $('div[id^="google_ads_iframe_"]').remove().length +
-            $('iframe[src*="safeframe.googlesyndication"]').remove().length
+            this.removeBySelector('iframe[name*="goog"]') +
+            this.removeBySelector('div[id^="google_ads_iframe_"]') +
+            this.removeBySelector('iframe[src*="safeframe.googlesyndication"]')
         );
     }
 
     private static removeNitroAds(): number {
-        return $("#nitro-floating-wrapper").remove().length;
+        return this.removeBySelector("#nitro-floating-wrapper");
     }
 
     private static removeBodyAds(): number {
-        return $('html > iframe[sandbox="allow-scripts allow-same-origin"]').remove().length;
+        return this.removeBySelector('html > iframe[sandbox="allow-scripts allow-same-origin"]');
     }
 
     private static removeUpgradeProAd(): number {
-        return (
-            $("#blobby-left").remove().length +
-            $("#button-upgrade").remove().length +
-            $(".w-full.text-center.p-2.bg-white").has("a[href*='/upgrade']").remove().length
-        );
+        let count = 0;
+        count += this.removeBySelector("#blobby-left");
+        count += this.removeBySelector("#button-upgrade");
+
+        const banners = document.querySelectorAll(".w-full.text-center.p-2.bg-white");
+        banners.forEach((banner) => {
+            if (banner.querySelector("a[href*='/upgrade']")) {
+                banner.remove();
+                count++;
+            }
+        });
+
+        return count;
     }
 
     private static removeBlueKai(): number {
-        return $('iframe[name="__bkframe"]').remove().length;
+        return this.removeBySelector('iframe[name="__bkframe"]');
     }
 
     private static removePrivacyPopupElement(): number {
-        return $("#onetrust-consent-sdk").remove().length;
+        return this.removeBySelector("#onetrust-consent-sdk");
     }
 
     private static removeAds(): number {
@@ -72,7 +90,7 @@ export default class AdBlocker {
             totalAdsRemovedThisTick: this.totalAdsRemoveLastCoupleTicks[0] ?? 0,
             totalAdsRemoveLastCoupleTicks: this.totalAdsRemoveLastCoupleTicks
                 .map((x) => x ?? 0)
-                .reduce((a, b) => (a) + b),
+                .reduce((a, b) => a + b),
         });
     }
 
@@ -115,7 +133,7 @@ export default class AdBlocker {
     public static async removePrivacyPopup() {
         if (!__DEBUG__) throw "This should be removed for release builds.";
 
-        await waitForCallback(() => !!this.removePrivacyPopupElement()).catch(() =>
+        await waitForCallback(() => !!document.querySelector("#onetrust-consent-sdk")).catch(() =>
             logger.debug("Privacy popup not visible.")
         );
     }
