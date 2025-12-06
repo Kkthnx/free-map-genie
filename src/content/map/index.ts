@@ -230,6 +230,12 @@ export class FMG_Map {
      * Load the map script, and wait for the globals to be defined.
      */
     private async loadMapScript(): Promise<void> {
+        // If mapManager is already present, avoid injecting a duplicate script.
+        if ((this.window as any).mapManager) {
+            logger.debug("Map script already initialized, skipping injection");
+            return;
+        }
+
         const script = await getElement<HTMLScriptElement>(
             "script[src^='https://cdn.mapgenie.io/js/map.js?id=']",
             this.window

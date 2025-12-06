@@ -105,7 +105,10 @@ export class FMG_Guide {
 
             logger.log("Guide setup complete");
         } catch (e) {
-            logger.error("FMG Guide setup failed", e);
+            logger.error("FMG Guide setup failed", {
+                error: e,
+                url: this.window.location.href
+            });
         }
     }
 }

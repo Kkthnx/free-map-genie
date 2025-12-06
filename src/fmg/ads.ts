@@ -11,7 +11,8 @@ export interface OnTickCallback {
 }
 
 export default class AdBlocker {
-    public static REMOVE_CHECK_INTERVAL = 2000;
+    public static REMOVE_CHECK_INTERVAL = 1500;
+    private static readonly MAX_TICKS = 20;
 
     public static totalAdsRemoveLastCoupleTicks: (number | undefined)[] = new Array(10).fill(undefined);
 
@@ -120,7 +121,8 @@ export default class AdBlocker {
         this.onTickCallbacks.forEach((cb) => cb(stats));
 
         const isInitDone = this.totalAdsRemoveLastCoupleTicks.every((x) => x !== undefined);
-        const isDone = stats.totalAdsRemoveLastCoupleTicks <= 0;
+        const isDone = stats.totalAdsRemoveLastCoupleTicks <= 0
+            || this.totalAdsRemoveLastCoupleTicks.filter((x) => x !== undefined).length >= this.MAX_TICKS;
 
         if (this.autoStop && isInitDone && isDone) {
             logger.debug(`AdBlocker stopped no more ads removed in the last couple ticks.`);

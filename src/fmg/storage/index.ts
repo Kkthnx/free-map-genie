@@ -47,7 +47,12 @@ export class FMG_Storage {
     }
 
     public async load(): Promise<void> {
-        await Promise.all(Object.values(this._data).map((data) => data.load()));
+        const entries = Object.values(this._data);
+        if (!entries.length) {
+            logger.debug("Loaded storage: no map data initialized");
+            return;
+        }
+        await Promise.all(entries.map((data) => data.load()));
         logger.debug("Loaded storage", this._data);
     }
 
