@@ -72,13 +72,22 @@ channel.onMessage("settingsChanged", ({ settings }) => {
 });
 
 channel.onMessage("reloadActiveTab", async () => {
-    const tabs = await chrome.tabs.query({active: true, currentWindow: true}, );
-    const tabId = tabs[0]?.id;
-    if (tabId !== undefined) {
-        await chrome.tabs.reload(tabId);
-        return true;
+    if (typeof chrome === "undefined" || !chrome.tabs || typeof chrome.tabs.query !== "function") {
+        logger.warn("chrome.tabs.query is not available");
+        return false;
     }
-    return false;
+    try {
+        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
+        const tabId = tabs[0]?.id;
+        if (tabId !== undefined) {
+            await chrome.tabs.reload(tabId);
+            return true;
+        }
+        return false;
+    } catch (e) {
+        logger.error("Failed to reload active tab", e);
+        return false;
+    }
 });
 
 async function init() {

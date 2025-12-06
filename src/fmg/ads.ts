@@ -20,6 +20,7 @@ export default class AdBlocker {
 
     private static readonly onTickCallbacks: OnTickCallback[] = [];
 
+    // Helper: Safely remove elements by selector without jQuery
     private static removeBySelector(selector: string): number {
         const elements = document.querySelectorAll(selector);
         let count = 0;
@@ -52,9 +53,26 @@ export default class AdBlocker {
 
     private static removeUpgradeProAd(): number {
         let count = 0;
+
+        // Standard buttons from older layouts
         count += this.removeBySelector("#blobby-left");
         count += this.removeBySelector("#button-upgrade");
 
+        // Generic "Upgrade To Pro" CTA (newer layouts, including guide pages)
+        const ctaElements = document.querySelectorAll("a, button");
+        ctaElements.forEach((el) => {
+            const text = el.textContent?.trim().toLowerCase() ?? "";
+            if (text.includes("upgrade to pro")) {
+                // Remove a slightly higher-level container if possible to clear padding/spacing
+                const container =
+                    el.closest("div") ??
+                    el.parentElement;
+                (container ?? el).remove();
+                count++;
+            }
+        });
+
+        // Older banner-style upgrade blocks on some pages
         const banners = document.querySelectorAll(".w-full.text-center.p-2.bg-white");
         banners.forEach((banner) => {
             if (banner.querySelector("a[href*='/upgrade']")) {
@@ -90,7 +108,7 @@ export default class AdBlocker {
             totalAdsRemovedThisTick: this.totalAdsRemoveLastCoupleTicks[0] ?? 0,
             totalAdsRemoveLastCoupleTicks: this.totalAdsRemoveLastCoupleTicks
                 .map((x) => x ?? 0)
-                .reduce((a, b) => a + b),
+                .reduce((a, b) => a + b, 0),
         });
     }
 
@@ -127,12 +145,12 @@ export default class AdBlocker {
 
     public static offTick(callback: OnTickCallback) {
         const i = this.onTickCallbacks.findIndex((cb) => cb === callback);
-        if (i > 0) this.onTickCallbacks.splice(i, 1);
+        if (i >= 0) this.onTickCallbacks.splice(i, 1);
     }
 
     public static async removePrivacyPopup() {
         if (!__DEBUG__) throw "This should be removed for release builds.";
-
+        // Use vanilla JS selector
         await waitForCallback(() => !!document.querySelector("#onetrust-consent-sdk")).catch(() =>
             logger.debug("Privacy popup not visible.")
         );

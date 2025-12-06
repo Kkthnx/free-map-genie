@@ -14,7 +14,7 @@ export type PageType =
 export async function isMapPage(window: Window): Promise<boolean> {
     return true
         && !!window.document.head.querySelector("meta[property='og:image'][content^='https://cdn.mapgenie.io/']")
-        && !!document.head.querySelector("meta[property='og:title'][content~='Map']");
+        && !!window.document.head.querySelector("meta[property='og:title'][content~='Map']");
 }
 
 /**
@@ -56,10 +56,10 @@ export async function getPageType(window: Window): Promise<PageType> {
         return "home";
     } else if (await isMapSelectorPage(window)) {
         return "map-selector";
-    } else if (await isMapPage(window)) {
-        return "map";
     } else if (await isGuidePage(window)) {
         return "guide";
+    } else if (await isMapPage(window)) {
+        return "map";
     }
     return "unknown";
 }

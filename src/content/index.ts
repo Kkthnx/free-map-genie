@@ -30,13 +30,6 @@ function listenForRefocus(callback: () => void) {
     }, 250));
 }
 
-/**
- * Reload the page, but only if it has not been reloaded consecutively 3 times.
- */
-function isReduxStoreDefined(): boolean {
-    return !!window.store;
-}
-
 const state: State = {
     user: "n/a",
     type: "unknown"
@@ -69,6 +62,7 @@ async function init() {
         case "guide":
             const guide = new FMG_Guide(window);
             await guide.setup();
+            // Set up refocus listener - reload() will safely check if minimap is ready
             listenForRefocus(() => guide.reload());
 
             setState({

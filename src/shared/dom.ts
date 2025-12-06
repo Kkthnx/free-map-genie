@@ -1,7 +1,7 @@
 import { timeout, waitForCallback } from "./async";
 
 function asElement(parent?: Window | HTMLElement) {
-    return parent !== undefined
+    return parent !== undefined 
         ? parent instanceof HTMLElement
             ? parent
             : parent.document
@@ -16,27 +16,21 @@ export function getElement<T extends HTMLElement>(
     const parentElement = asElement(parent);
     const element = parentElement.querySelector(selector);
     if (element) return Promise.resolve(element as T);
-
+    
     if (!parentElement) return Promise.reject(new Error("Parent element not found"));
 
-    return timeout(
-        new Promise<T>((resolve) => {
-            const observer = new MutationObserver(() => {
-                const node = parentElement.querySelector(selector);
-                if (node) {
-                    observer.disconnect();
-                    resolve(node as T);
-                }
-            });
-
-            observer.observe(
-                parentElement instanceof Window ? parentElement.document : parentElement,
-                { childList: true, subtree: true }
-            );
-        }),
-        timeoutTime,
-        `Failed to get element ${selector}.`
-    );
+    return timeout(new Promise<T>((resolve) => {
+        const observer = new MutationObserver(() => {
+            const element = parentElement.querySelector(selector);
+            if (element) {
+                observer.disconnect();
+                resolve(element as T);
+            }
+        });
+        observer.observe(parentElement instanceof Window ? parentElement.document : parentElement, {
+            childList: true, subtree: true
+        });
+    }), timeoutTime, `Failed to get element ${selector}.`);
 }
 
 export function getElements<T extends HTMLElement[]>(
@@ -48,24 +42,19 @@ export function getElements<T extends HTMLElement[]>(
     const elements = parentElement.querySelectorAll(selector);
     if (elements.length > 0) return Promise.resolve([...elements] as T);
 
-    return timeout(
-        new Promise<T>((resolve) => {
-            const observer = new MutationObserver(() => {
-                const nodes = parentElement.querySelectorAll(selector);
-                if (nodes.length > 0) {
-                    observer.disconnect();
-                    resolve([...nodes] as T);
-                }
-            });
+    return timeout(new Promise<T>((resolve) => {
+        const observer = new MutationObserver(() => {
+            const elements = parentElement.querySelectorAll(selector);
+            if (elements.length > 0) {
+                observer.disconnect();
+                resolve([...elements] as T);
+            }
+        });
 
-            observer.observe(
-                parentElement instanceof Window ? parentElement.document : parentElement,
-                { childList: true, subtree: true }
-            );
-        }),
-        timeoutTime,
-        `Failed to get element ${selector}.`
-    );
+        observer.observe(parentElement instanceof Window ? parentElement.document : parentElement, {
+            childList: true, subtree: true
+        });
+    }), timeoutTime, `Failed to get elements ${selector}.`);
 }
 
 export function getElementWithXPath<T extends HTMLElement>(

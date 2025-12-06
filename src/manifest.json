@@ -13,8 +13,9 @@
     "content_scripts": [
         {
             "js": ["extension.js"],
-            "matches": ["<all_urls>"],
-            "run_at": "document_start"
+            "matches": ["https://mapgenie.io/*"],
+            "run_at": "document_start",
+            "all_frames": true
         },
         {
             "js": ["storage.js"],

@@ -22,8 +22,17 @@ export interface ActiveTab {
 const connMap: Map<string, CachedPortInfo> = new Map();
 
 async function getActiveTab() {
-    const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
-    return tabs[0];
+    if (typeof chrome === "undefined" || !chrome.tabs || typeof chrome.tabs.query !== "function") {
+        logger.warn("chrome.tabs.query is not available");
+        return undefined;
+    }
+    try {
+        const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        return tabs[0];
+    } catch (e) {
+        logger.error("Failed to get active tab", e);
+        return undefined;
+    }
 }
 
 function postMessage(message: InternalMessage) {
