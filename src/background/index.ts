@@ -56,7 +56,18 @@ const ALLOW_MAPGENIE_IFRAME_RULE = {
 
 const RULES = [BLOCK_MAP_SCRIPT_RULE, ALLOW_MAPGENIE_IFRAME_RULE];
 
+function hasDeclarativeNetRequestSupport() {
+    return typeof chrome !== "undefined"
+        && !!chrome.declarativeNetRequest
+        && typeof chrome.declarativeNetRequest.updateDynamicRules === "function";
+}
+
 channel.onMessage("settingsChanged", ({ settings }) => {
+    if (!hasDeclarativeNetRequestSupport()) {
+        logger.warn("declarativeNetRequest API not available; skipping dynamic rule update");
+        return;
+    }
+
     if (settings.extension_enabled) {
         logger.debug("enabled script block");
         chrome.declarativeNetRequest.updateDynamicRules({
@@ -91,10 +102,14 @@ channel.onMessage("reloadActiveTab", async () => {
 });
 
 async function init() {
-    await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: RULES.map(r => r.id),
-        addRules: RULES,
-    });
+    if (hasDeclarativeNetRequestSupport()) {
+        await chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: RULES.map(r => r.id),
+            addRules: RULES,
+        });
+    } else {
+        logger.warn("declarativeNetRequest API not available during init; skipping initial rule setup");
+    }
 
     await initStorage();
 }

@@ -2,9 +2,9 @@
     "name": "fmg",
     "version": "2.1.2",
     "license": "MIT",
-    "description": "Mapgenie PRO unlocker",
+    "description": "Enhances MapGenie maps (mapgenie.io, fo76map.com, rdr2map.com, fallout4map.com) with additional convenience features.",
     "homepage": "https://github.com/V1P3R-FMG/free-map-genie",
-    "author": "V1P3R",
+    "author": "V1P3R, Kkthnx",
     "type": "module",
     "devDependencies": {
         "@swc/core": "^1.3.74",
