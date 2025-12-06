@@ -1,5 +1,5 @@
 import { getElement } from "@shared/dom";
-import { timeout, waitForCallback, waitForGlobals } from "@shared/async";
+import { waitForCallback, waitForGlobals } from "@shared/async";
 import channel from "@shared/channel/content";
 
 import { FMG_ApiFilter } from "@fmg/filters/api-filter";
@@ -284,7 +284,7 @@ export class FMG_Map {
 
         this.fixGoogleMaps();
 
-        await timeout(waitForCallback(() => !!this.window.mapData), 5000, "Mapdata took to long to load.");
+        await waitForCallback(() => !!this.window.mapData, 5000);
 
         // Setup mock user if enabled
         if (settings.mock_user) {

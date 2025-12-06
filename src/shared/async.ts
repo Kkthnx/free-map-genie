@@ -51,9 +51,18 @@ export function timeout<T>(promise: Promise<T>, ms: number, error?: string): Pro
  */
 export async function waitForCallback(callback: () => boolean, timeoutTime: number = -1) {
     if (callback()) return;
-    return timeout((async () => {
-        while (!callback()) await sleep(100);
-    })(), timeoutTime);
+
+    const waitPromise = (async () => {
+        while (!callback()) {
+            await sleep(100);
+        }
+    })();
+
+    if (timeoutTime > 0) {
+        return timeout(waitPromise, timeoutTime);
+    }
+
+    return waitPromise;
 }
 
 /**

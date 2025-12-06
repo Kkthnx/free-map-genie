@@ -27,6 +27,8 @@ export default {
     roots: ["tests"],
     modulePaths: baseUrl ? [baseUrl] : [],
     moduleDirectories: ["node_modules"],
-    moduleNameMapper: paths ? pathsToModuleNameMapper(paths) : [],
+    moduleNameMapper: paths
+        ? pathsToModuleNameMapper(paths, { prefix: "<rootDir>/" })
+        : {},
     testEnvironment: "./tests/env/main.ts"
 };
