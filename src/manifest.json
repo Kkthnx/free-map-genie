@@ -13,7 +13,11 @@
     "content_scripts": [
         {
             "js": ["extension.js"],
-            "matches": ["https://mapgenie.io/*"],
+            "matches": [
+                "https://mapgenie.io/*",
+                "https://fo76map.com/*",
+                "https://rdr2map.com/*"
+            ],
             "run_at": "document_start",
             "all_frames": true
         },
