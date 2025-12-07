@@ -34,7 +34,7 @@ export default function TabView(props: TabViewProps) {
             <div className="tab-view-tabs">
                 {
                     pages.map(({ name, icon }) => (
-                        <TabViewTab 
+                        <TabViewTab
                             key={name}
                             name={name}
                             icon={icon}
@@ -48,7 +48,7 @@ export default function TabView(props: TabViewProps) {
                 {
                     children?.map((child) => (
                         <div
-                            key={child.props.name} 
+                            key={child.props.name}
                             className={className(
                                 "tab-view-page-wrapper",
                                 { "show": currentPageName === child.props.name }
@@ -95,12 +95,13 @@ function TabViewTab(props: TabViewTabProps) {
                 "tab-view-tab",
                 { active: props.selected }
             )}
+            title={props.name}
             onClick={() => props.onClick?.(props.name)}
         >
             {
                 props.icon
                     ? <Icon icon={props.icon} size="16px" />
-                    : <span>{ props.name }</span>
+                    : <span>{props.name}</span>
             }
         </h1>
     );

@@ -29,30 +29,36 @@ channel.onMessage("hello", () => {
 });
 
 channel.onMessage("addBookmark", () => {
-    const $url = document.head.querySelector(
-        "meta[property='og:url']"
-    ) as HTMLMetaElement;
+    const url = window.location.href;
+    const hostname = window.location.hostname;
 
-    const $icon = document.head.querySelector(
-        "link[rel='apple-touch-icon']"
-    ) as HTMLLinkElement;
+    const searchParams = new URLSearchParams(window.location.search);
 
-    const $title = document.head.querySelector(
-        "meta[property='og:title']"
-    ) as HTMLMetaElement;
-
-    if (!$url || !$icon || !$title) {
-        logger.warn("failed to add bookmark", {
-            url: $url,
-            icon: $icon,
-            title: $title
-        });
+    // Ignore the special storage iframe so we don't bookmark ?fmg_storage=1
+    if (searchParams.get("fmg_storage") === "1") {
+        logger.warn("Ignoring storage iframe for bookmark", { url, hostname });
         return;
     }
 
-    const url = $url.content;
-    const favicon = $icon.href;
-    const title = $title.content
+    // Only allow bookmarks on MapGenie pages
+    if (!hostname.endsWith("mapgenie.io")) {
+        logger.warn("Bookmarks are only allowed on MapGenie pages", { url, hostname });
+        return;
+    }
+
+    // Try to resolve a favicon; fall back to extension icon if not present on the page
+    const $icon = document.head.querySelector(
+        "link[rel='apple-touch-icon'], link[rel='icon']"
+    ) as HTMLLinkElement | null;
+
+    const favicon = $icon?.href ?? chrome.runtime.getURL("icons/fmg-icon-32.png");
+
+    // Prefer OG title, but fall back to document title or URL
+    const $title = document.head.querySelector(
+        "meta[property='og:title']"
+    ) as HTMLMetaElement | null;
+
+    const title = $title?.content ?? document.title ?? url;
 
     return { url, favicon, title };
 });

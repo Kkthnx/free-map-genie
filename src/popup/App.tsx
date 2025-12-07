@@ -60,8 +60,18 @@ export default function App() {
             <div className="container">
                 <div className="header">
                     <div className="left">
-                        <IconButton size="20px" icon="reload" onClick={reloadExtension} />
-                        <IconButton size="20px" icon="g" onClick={openMapGenie} />
+                        <IconButton
+                            size="20px"
+                            icon="reload"
+                            onClick={reloadExtension}
+                            title="Reload the extension"
+                        />
+                        <IconButton
+                            size="20px"
+                            icon="g"
+                            onClick={openMapGenie}
+                            title="Open MapGenie website"
+                        />
                     </div>
                     <div className="center">
                         <div className="title">
@@ -71,7 +81,13 @@ export default function App() {
                         </div>
                     </div>
                     <div className="right">
-                        <IconButton className="close" size="30px" icon="cancel" onClick={closePopup} />
+                        <IconButton
+                            className="close"
+                            size="30px"
+                            icon="cancel"
+                            onClick={closePopup}
+                            title="Close this window"
+                        />
                     </div>
                 </div>
                 <TabView page={"settings"}>

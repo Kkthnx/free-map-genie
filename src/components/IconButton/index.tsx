@@ -11,6 +11,8 @@ export interface ButtonProps {
     size?: string;
     toggle?: boolean;
     toggled?: boolean;
+    title?: string;
+    ariaLabel?: string;
 
     onToggle?: (toggled: boolean) => void;
     onClick?: React.MouseEventHandler;
@@ -38,6 +40,8 @@ export default function IconButton(props: ButtonProps) {
                 props.className,
                 { toggled, toggle },
             )}
+            title={props.title}
+            aria-label={props.ariaLabel ?? props.title}
             onClick={onClick}
         >
             <Icon icon={props.icon} size={props.size} />

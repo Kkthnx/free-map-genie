@@ -28,19 +28,31 @@ export default function BookmarksPage({ connected }: BookmarksPageProps) {
     }
 
     async function onAdd() {
-        if (!connected) {
-            toastr.error("No connection to extension reload page");
-            return;
-        }
-
         try {
-            const bookmark = await channel.extension.addBookmark();
+            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
 
-            if (!bookmark || !bookmark.url || !bookmark.favicon || !bookmark.title) {
-                logger.warn("Invalid bookmark", bookmark);
-                toastr.warning("Invalid bookmark");
+            const activeTab = tabs.find((tab) => {
+                if (!tab.url) return false;
+                try {
+                    const { hostname } = new URL(tab.url);
+                    return hostname.endsWith("mapgenie.io");
+                } catch {
+                    return false;
+                }
+            });
+
+            if (!activeTab || !activeTab.url) {
+                toastr.warning("Open a MapGenie map in the active tab to bookmark it");
                 return;
             }
+
+            const url = activeTab.url;
+
+            const bookmark: FMG.Extension.BookmarkData = {
+                url,
+                favicon: activeTab.favIconUrl ?? chrome.runtime.getURL("icons/fmg-icon-32.png"),
+                title: activeTab.title ?? activeTab.url,
+            };
 
             if (findBookmarkIndex(bookmark.url) >= 0) {
                 toastr.error(`Bookmark already exists ${bookmark.url}`);
@@ -74,10 +86,10 @@ export default function BookmarksPage({ connected }: BookmarksPageProps) {
 
     return (
         <Bookmarks
-                bookmarks={bookmarks}
-                onAdd={onAdd}
-                onRemove={onRemove}
-                onOpen={onOpen}
+            bookmarks={bookmarks}
+            onAdd={onAdd}
+            onRemove={onRemove}
+            onOpen={onOpen}
         />
     );
 }
