@@ -36,9 +36,26 @@ export class FMG_Storage {
     }
 
     public get data(): FMG_Data {
-        if (this.window.user) {
-            return this._data[FMG_Keys.getV2Key(this.keyData)] ?? FMG_Data.empty();
+        if (!this.window.user) {
+            return FMG_Data.empty();
         }
+
+        const key = FMG_Keys.getV2Key(this.keyData);
+        const direct = this._data[key];
+        if (direct) {
+            return direct;
+        }
+
+        // Fallback: if for some reason the computed key doesn't exist but we
+        // only have a single storage entry, use that one. This is safer than
+        // silently discarding notes on certain maps (e.g. new games).
+        const entries = Object.values(this._data);
+        if (entries.length === 1) {
+            logger.warn("FMG_Storage: key mismatch, falling back to sole storage entry");
+            return entries[0];
+        }
+
+        logger.warn("FMG_Storage: no storage entry found for key", key);
         return FMG_Data.empty();
     }
 

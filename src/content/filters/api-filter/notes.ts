@@ -17,7 +17,7 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
         "notes",
         false,
         (_method, _key, _id, data, _url, block) => {
-            // Create a new note
+            // Create a new note (stored locally by FMG)
             const note = {
                 ...data,
                 category: null,
@@ -26,7 +26,6 @@ export default function (filter: FMG_ApiFilter, mapManager: FMG_MapManager) {
             };
             logger.debug("create note", note);
 
-            // Add the note to the notes array
             mapManager.storage.data.notes.push(note);
             mapManager.storage.data.save();
 

@@ -1,5 +1,5 @@
 import { getElement } from "@shared/dom";
-import { waitForCallback, waitForGlobals } from "@shared/async";
+import { waitForCallback, waitForGlobals, timeout } from "@shared/async";
 import channel from "@shared/channel/content";
 
 import { FMG_ApiFilter } from "@fmg/filters/api-filter";
@@ -57,10 +57,10 @@ export class FMG_Map {
         return this.map
             ? this.window.mapData?.maps
                 .find(map => map.slug === this.map)?.id
-                    ?? (logger.error(
-                        `Map(${this.map}) not found, valid maps: `,
-                        this.window.mapData?.maps.map((map) => map.slug) || []
-                    ), null)
+            ?? (logger.error(
+                `Map(${this.map}) not found, valid maps: `,
+                this.window.mapData?.maps.map((map) => map.slug) || []
+            ), null)
             : this.window.mapData?.map.id ?? null;
     }
 
@@ -74,7 +74,7 @@ export class FMG_Map {
         if (this.window.config?.altMapSdk) {
             this.window.google = this.window.google || {};
             this.window.google.maps = {
-                Size: function () {}
+                Size: function () { }
             };
         }
     }
@@ -132,7 +132,7 @@ export class FMG_Map {
         if (!this.window.mapData) throw new Error("Mapdata not loaded.");
 
         const map = await FMG_MapData.get(this.window.game.id, this.mapId);
-        
+
         // Urls
         this.window.mapUrl = map.url;
 
@@ -219,7 +219,7 @@ export class FMG_Map {
      */
     private cleanupProUpgradeAds() {
         AdBlocker.start();
-        
+
         if (__DEBUG__) {
             AdBlocker.onTick(logger.debug.bind("FMG AdBlocker stats:"));
             AdBlocker.removePrivacyPopup();
@@ -298,7 +298,7 @@ export class FMG_Map {
         this.setupConfig(settings);
 
         await FMG_StorageDataMigrator.migrateLegacyData(this.window);
-    
+
         if (this.window.user) {
             await this.mapManager.load();
             this.loadUser();
@@ -320,7 +320,7 @@ export class FMG_Map {
 
         // Finish mapManager initialization
         // We need to do this after the map script is loaded,
-        this.mapManager.init(); 
+        this.mapManager.init();
 
         // Only attach ui if we are not in mini mode
         if (!this.window.isMini) {

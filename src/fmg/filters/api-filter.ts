@@ -103,10 +103,13 @@ export class FMG_ApiFilter {
             const url = new URL(
                 (this.axios.defaults.baseURL ?? "") + requestUrl
             );
-            const noParamsUrl = url.origin + url.pathname;
 
-            const group = this.getFilter(method, noParamsUrl);
-            const { key, id } = group?.regex.exec(noParamsUrl)?.groups ?? {};
+            // We only care about the API path when matching, not the origin.
+            // Our regexes are written against "/api/v1/..." paths.
+            const path = url.pathname;
+
+            const group = this.getFilter(method, path);
+            const { key, id } = group?.regex.exec(path)?.groups ?? {};
 
             return blockable<any, [string, string, string, any, string]>(
                 group?.callback || (() => {}),

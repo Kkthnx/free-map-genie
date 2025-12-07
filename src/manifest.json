@@ -12,7 +12,9 @@
     },
     "content_scripts": [
         {
-            "js": ["extension.js"],
+            "js": [
+                "extension.js"
+            ],
             "matches": [
                 "https://mapgenie.io/*",
                 "https://fo76map.com/*",
@@ -23,16 +25,26 @@
             "all_frames": true
         },
         {
-            "js": ["storage.js"],
-            "matches": ["https://mapgenie.io/?fmg_storage=1"],
+            "js": [
+                "storage.js"
+            ],
+            "matches": [
+                "https://mapgenie.io/?fmg_storage=1"
+            ],
             "run_at": "document_start",
             "all_frames": true
         }
     ],
     "web_accessible_resources": [
         {
-            "resources": ["content.js", "css/*", "font/*"],
-            "matches": ["<all_urls>"]
+            "resources": [
+                "content.js",
+                "css/*",
+                "font/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
         }
     ],
     "permissions": [
