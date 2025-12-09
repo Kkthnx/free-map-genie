@@ -1,5 +1,6 @@
 import type { FMG_MapManager } from ".";
 import clipboard from "@shared/clipboard";
+import { generateShareUrlForNote } from "@fmg/share";
 
 export class FMG_Popup {
     public instance: MG.Popup;
@@ -18,6 +19,7 @@ export class FMG_Popup {
         this.mapManager = mapManager;
 
         this.fixLocationPermaLink();
+        this.injectShareNoteButton();
     }
 
     private fixLocationPermaLink(): void {
@@ -50,12 +52,117 @@ export class FMG_Popup {
         return url.toString();
     }
 
+    private findNoteForPopup(): MG.Note | undefined {
+        const notes = this.mapManager.storage.data.notes;
+        if (!notes.length) return;
+
+        const lngLat = this.instance._lngLat;
+        const lat = lngLat?.lat;
+        const lng = lngLat?.lng;
+
+        if (typeof lat !== "number" || typeof lng !== "number") return;
+
+        // Use a slightly relaxed tolerance to account for any rounding
+        // differences between stored note coordinates and popup coordinates.
+        const TOLERANCE = 1e-4;
+
+        return notes.find((note) => {
+            const nLat = typeof note.latitude === "number" ? note.latitude : Number(note.latitude);
+            const nLng = typeof note.longitude === "number" ? note.longitude : Number(note.longitude);
+
+            if (Number.isNaN(nLat) || Number.isNaN(nLng)) return false;
+
+            return (
+                Math.abs(nLat - lat) <= TOLERANCE &&
+                Math.abs(nLng - lng) <= TOLERANCE
+            );
+        });
+    }
+
     /**
-     * Shows a popup for a link
+     * Inject a "Share Note" icon into the popup which generates
+     * a URL-encoded representation of the note and copies it.
+     * This mirrors the native MapGenie permalink icon styling.
+     */
+    private injectShareNoteButton(): void {
+        const parent = this.instance._content;
+        if (!parent) return;
+
+        if (parent.querySelector(".fmg-share-note-icon")) return;
+
+        // Only show the share control when we can resolve a corresponding FMG note.
+        if (!this.findNoteForPopup()) return;
+
+        // Reuse the existing MapGenie permalink icon for consistent styling
+        const baseIcon = parent.querySelector<HTMLElement>("i.permalink.icon.ion-ios-link");
+        const shareIcon = baseIcon?.cloneNode(true) as HTMLElement | undefined;
+
+        if (!baseIcon || !shareIcon) return;
+
+        shareIcon.classList.add("fmg-share-note-icon");
+        const defaultTitle = "Share FMG note link";
+        const copiedTitle = "Link Copied";
+        // Tooltip used by MapGenie + native browser tooltip.
+        shareIcon.setAttribute("data-title", defaultTitle);
+        shareIcon.setAttribute("title", defaultTitle);
+        shareIcon.style.color = this.color;
+
+        shareIcon.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            // Only allow sharing when we can resolve a corresponding FMG note
+            // from local storage for this popup.
+            const note = this.findNoteForPopup();
+            if (!note) {
+                alert("FMG: This marker is not an FMG note or has not been saved yet, so it cannot be shared.");
+                return;
+            }
+
+            const url = new URL(window.location.href);
+            const shareUrl = generateShareUrlForNote(note, url);
+
+            // Fire-and-forget; clipboard() is best-effort and handles all fallbacks.
+            void clipboard(shareUrl);
+
+            // Temporarily show a "Link Copied" tooltip to match the
+            // native MapGenie permalink behaviour, then restore the
+            // default tooltip text for subsequent hovers.
+            const previousTitle = shareIcon.getAttribute("data-title") || defaultTitle;
+            shareIcon.setAttribute("data-title", copiedTitle);
+            shareIcon.setAttribute("title", copiedTitle);
+
+            this.showPopup(shareIcon);
+
+            setTimeout(() => {
+                shareIcon.setAttribute("data-title", previousTitle);
+                shareIcon.setAttribute("title", previousTitle);
+            }, 2000);
+        });
+
+        baseIcon.after(shareIcon);
+    }
+
+    /**
+     * Shows a tooltip-style popup for a link, if the underlying
+     * page has a tooltip implementation available. Falls back
+     * silently when not available.
      * @param link the link to show the popup for
      */
     private showPopup(link: HTMLElement) {
-        $(link).tooltip("show");
-        setTimeout(() => $(link).tooltip("hide"), 2000);
+        const anyWin = window as any;
+        const $fn = (anyWin.$ || anyWin.jQuery) as ((el: HTMLElement) => any) | undefined;
+
+        if ($fn) {
+            const $link = $fn(link);
+            if (typeof $link.tooltip === "function") {
+                $link.tooltip("show");
+                setTimeout(() => $link.tooltip("hide"), 2000);
+                return;
+            }
+        }
+
+        // If no tooltip implementation is available, do nothing.
+        // The title attribute on the icon still provides a native tooltip.
     }
 }

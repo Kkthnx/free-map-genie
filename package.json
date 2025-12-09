@@ -66,6 +66,7 @@
     },
     "dependencies": {
         "jquery": "^3.7.0",
+        "lz-string": "^1.5.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "tiny-uid": "^1.1.2",

@@ -7,6 +7,7 @@ import { FMG_StorageFilter } from "@fmg/filters/storage-filter";
 import { FMG_HeatmapsData, FMG_MapData } from "@fmg/info";
 import { FMG_MapManager } from "@fmg/map-manager";
 import FMG_StorageDataMigrator from "@fmg/storage/migration";
+import { importSharedNoteFromUrl } from "@fmg/share";
 
 import setupApiFilter from "@/content/filters/api-filter";
 import setupStorageFilter from "@/content/filters/storage-filter";
@@ -319,8 +320,12 @@ export class FMG_Map {
         setupApiFilter(apiFilter, this.mapManager);
 
         // Finish mapManager initialization
-        // We need to do this after the map script is loaded,
+        // We need to do this after the map script is loaded.
         this.mapManager.init();
+
+        // Import any shared note from the URL before attaching the UI so
+        // that the initial view already reflects the imported marker.
+        await importSharedNoteFromUrl(this.window, this.mapManager);
 
         // Only attach ui if we are not in mini mode
         if (!this.window.isMini) {
