@@ -14,7 +14,15 @@ export default function InfoPage() {
 
     React.useEffect(() => {
         async function fetchState() {
-            setState(await channel.content.getState());
+            try {
+                const nextState = await channel.content.getState();
+                setState(nextState);
+            } catch (err) {
+                // If the content script is not available (e.g. popup opened on a
+                // non-MapGenie tab) or the channel times out, just keep the last
+                // known state and log a warning instead of throwing.
+                logger.warn("FMG_Popup: Failed to get state from content script", err);
+            }
         }
 
         fetchState();
@@ -24,5 +32,5 @@ export default function InfoPage() {
         return () => clearInterval(handle);
     }, []);
 
-    return (<Info {...state}/>);
+    return (<Info {...state} />);
 }
