@@ -1,5 +1,4 @@
-import channel from "@shared/channel/content";
-
+// 1. REMOVE THIS IMPORT: import channel from "@shared/channel/content";
 import { getPageType, type PageType } from "@fmg/page";
 import { FMG_Map } from "./map";
 import { FMG_Guide } from "./guide";
@@ -8,71 +7,66 @@ import debounce from "@shared/debounce";
 
 export interface State {
     user: string;
-    type: PageType
+    type: PageType;
 }
 
-declare global {
-    export interface ContentChannel {
-        getState(): State;
-    }
-}
-
-channel.connect();
-
-function listenForRefocus(callback: () => void) {
-    document.addEventListener("visibilitychange", debounce(() => {
-        switch (document.visibilityState) {
-            case "visible":
-                callback();
-                logger.debug("refocused");
-                break;
-        }
-    }, 250));
-}
-
-const state: State = {
+// Global State
+let state: State = {
     user: "n/a",
     type: "unknown"
 };
 
 function setState(newState: Partial<State>) {
-    Object.entries(newState).forEach(([k, v]) => {
-        state[k as keyof typeof newState] = v as never;
-    });
+    state = { ...state, ...newState };
 }
 
-/**
- * Itialize the content script
- */
+// 2. NEW MESSAGING SYSTEM
+// Listen for requests from 'extension.js' (Isolated World)
+window.addEventListener("message", (event) => {
+    // Security check: must be from same window
+    if (event.source !== window || !event.data) return;
+
+    // When the popup asks for state...
+    if (event.data.type === "fmg:state:request") {
+        // ...send it back via postMessage
+        window.postMessage({
+            type: "fmg:state:response",
+            requestId: event.data.requestId,
+            state: state
+        }, "*");
+    }
+});
+
+function listenForRefocus(callback: () => void) {
+    document.addEventListener("visibilitychange", debounce(() => {
+        if (document.visibilityState === "visible") {
+            callback();
+            logger.debug("refocused");
+        }
+    }, 250));
+}
+
 async function init() {
-    // Run code for according to page type
     const type = await getPageType(window);
     logger.debug("pageType:", type);
+
     switch (type) {
-        case "map":
+        case "map": {
             const map = new FMG_Map(window);
             await map.setup();
             listenForRefocus(() => map.reload());
-
-            setState({
-                user: String(map.user),
-                type
-            });
+            setState({ user: String(map.user), type });
             break;
-        case "guide":
+        }
+        case "guide": {
             const guide = new FMG_Guide(window);
             await guide.setup();
-            // Set up refocus listener - reload() will safely check if minimap is ready
             listenForRefocus(() => guide.reload());
-
-            setState({
-                user: String(guide.user),
-                type
-            });
+            setState({ user: String(guide.user), type });
             break;
+        }
         case "map-selector":
             await FMG_MapSelector.setup(window);
-
             setState({ type });
             break;
         case "home":
@@ -84,15 +78,7 @@ async function init() {
     }
 }
 
-channel.onMessage("getState", () => {
-    return state;
+init().catch((err) => {
+    // Send error to the bridge if needed, or just log
+    logger.error("[CONTENT]", err);
 });
-
-init()
-    .catch((err) => {
-        window.postMessage({
-            type: "fmg:error",
-            error: err.message
-        });
-        logger.error("[CONTENT]", err);
-    });
