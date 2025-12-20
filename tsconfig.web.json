@@ -5,7 +5,6 @@
         "resolveJsonModule": true,
         "allowSyntheticDefaultImports": true,
         "strict": true,
-        "skipLibCheck": true,
         "target": "ES2020",
         "module": "CommonJS",
         "baseUrl": "./src",
@@ -25,8 +24,7 @@
             "@tests/data/*": ["../tests/data/*"],
             "@tests/mocks/*": ["../tests/mocks/*"]
         },
-        "typeRoots": ["./node_modules/@types", "./src/@types"],
-        "types": ["webextension-polyfill", "node"]
+        "typeRoots": ["./node_modules/@types", "./src/@types"]
     },
     "include": ["src/**/*"],
 }

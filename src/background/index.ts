@@ -1,5 +1,5 @@
-import browser from "webextension-polyfill";
 import channel from "@shared/channel/background";
+
 import { initStorage } from "./storage";
 import "./api";
 
@@ -10,47 +10,88 @@ declare global {
     }
 }
 
-// 1. REMOVED the Blocking Rule completely from active use
-// We only want to strip headers from iframes, not block the map engine.
-const ALLOW_MAPGENIE_IFRAME_RULE: chrome.declarativeNetRequest.Rule = {
+type RuleActionType = chrome.declarativeNetRequest.RuleActionType;
+type ResourceType = chrome.declarativeNetRequest.ResourceType;
+type HeaderOperation = chrome.declarativeNetRequest.HeaderOperation;
+
+function ruleActionType(type: `${RuleActionType}`): RuleActionType {
+    return type as RuleActionType;
+}
+
+function resourceType(type: `${ResourceType}`): ResourceType {
+    return type as ResourceType;
+}
+
+function headerOperation(operation: `${HeaderOperation}`): HeaderOperation {
+    return operation as HeaderOperation;
+}
+
+const BLOCK_MAP_SCRIPT_RULE = {
+    id: 1,
+    priority: 1,
+    action: { type: "block" as chrome.declarativeNetRequest.RuleActionType.BLOCK },
+    condition: {
+        regexFilter: "^https://cdn\\.mapgenie\\.io/js/map\\.js\\?id=\\w+$",
+        resourceTypes: ["script" as chrome.declarativeNetRequest.ResourceType.SCRIPT]
+    }
+};
+
+const ALLOW_MAPGENIE_IFRAME_RULE = {
     id: 2,
     priority: 1,
     action: {
-        type: "modifyHeaders",
-        responseHeaders: [
-            { header: "X-Frame-Options", operation: "remove" },
-            { header: "Frame-Options", operation: "remove" }
-        ],
+        type: ruleActionType("modifyHeaders"),
+        responseHeaders: ["X-Frame-Options", "Frame-Options"].map((header) => ({
+            header,
+            operation: headerOperation("remove"),
+        })),
     },
     condition: {
         requestDomains: ["mapgenie.io"],
-        resourceTypes: ["sub_frame"]
+        resourceTypes: __DEBUG__
+            ? [resourceType("sub_frame"), resourceType("main_frame")]
+            : [resourceType("sub_frame")],
     },
 };
 
-// Only apply the Allow Rule
-const RULES = [ALLOW_MAPGENIE_IFRAME_RULE];
+const RULES = [BLOCK_MAP_SCRIPT_RULE, ALLOW_MAPGENIE_IFRAME_RULE];
 
-// Helper to update rules safely
-async function updateRules(enableBlock: boolean) {
-    // We are no longer blocking the script, so this function essentially does nothing
-    // regarding the block list, but we keep it to prevent compilation errors
-    // if other parts of your app call 'settingsChanged'.
-    if (!chrome.declarativeNetRequest) return;
-    logger.debug(`Settings changed: ${enableBlock}`);
+function hasDeclarativeNetRequestSupport() {
+    return typeof chrome !== "undefined"
+        && !!chrome.declarativeNetRequest
+        && typeof chrome.declarativeNetRequest.updateDynamicRules === "function";
 }
 
 channel.onMessage("settingsChanged", ({ settings }) => {
-    updateRules(settings.extension_enabled).catch(logger.error);
+    if (!hasDeclarativeNetRequestSupport()) {
+        logger.warn("declarativeNetRequest API not available; skipping dynamic rule update");
+        return;
+    }
+
+    if (settings.extension_enabled) {
+        logger.debug("enabled script block");
+        chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: [BLOCK_MAP_SCRIPT_RULE.id],
+            addRules: [BLOCK_MAP_SCRIPT_RULE],
+        });
+    } else {
+        logger.debug("disabled script block");
+        chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: [BLOCK_MAP_SCRIPT_RULE.id],
+        });
+    }
 });
 
 channel.onMessage("reloadActiveTab", async () => {
+    if (typeof chrome === "undefined" || !chrome.tabs || typeof chrome.tabs.query !== "function") {
+        logger.warn("chrome.tabs.query is not available");
+        return false;
+    }
     try {
-        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        const tabs = await chrome.tabs.query({active: true, currentWindow: true});
         const tabId = tabs[0]?.id;
-        
         if (tabId !== undefined) {
-            await browser.tabs.reload(tabId);
+            await chrome.tabs.reload(tabId);
             return true;
         }
         return false;
@@ -61,22 +102,18 @@ channel.onMessage("reloadActiveTab", async () => {
 });
 
 async function init() {
-    if (chrome.declarativeNetRequest) {
-        try {
-            // Reset rules to ONLY allow iframes. 
-            // We remove ID 1 (The Block Rule) explicitly just in case it was stuck.
-            await chrome.declarativeNetRequest.updateDynamicRules({
-                removeRuleIds: [1, 2], 
-                addRules: RULES,
-            });
-        } catch (error) {
-            logger.error("Failed to update dynamic rules", error);
-        }
+    if (hasDeclarativeNetRequestSupport()) {
+        await chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: RULES.map(r => r.id),
+            addRules: RULES,
+        });
+    } else {
+        logger.warn("declarativeNetRequest API not available during init; skipping initial rule setup");
     }
 
     await initStorage();
 }
 
 init()
-    .then(() => logger.log("Background script loaded"))
+    .then(() => logger.log("background script loaded"))
     .catch(logger.error);

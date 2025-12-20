@@ -2,35 +2,7 @@ import { ControlGroup, Control } from "@components/Controls";
 import type { FMG_MapManager } from "@fmg/map-manager";
 import { InjectedComponent } from "@shared/react";
 
-// [CRITICAL] REMOVED: import channel from "@shared/channel/content";
-// Channel uses chrome.runtime which is banned in MAIN world
-
-// Helper to get settings via window.postMessage bridge (MAIN world safe)
-async function getSettings(): Promise<FMG.Extension.Settings> {
-    return new Promise((resolve) => {
-        const requestId = Math.random().toString(36).substring(7);
-        
-        const listener = (event: MessageEvent) => {
-            if (event.source !== window || !event.data) return;
-            
-            if (event.data.type === "fmg:settings:response" && event.data.requestId === requestId) {
-                window.removeEventListener("message", listener);
-                resolve(event.data.settings);
-            }
-        };
-        window.addEventListener("message", listener);
-
-        window.postMessage({ type: "fmg:settings:request", requestId }, "*");
-        
-        setTimeout(() => {
-            window.removeEventListener("message", listener);
-            resolve({
-                extension_enabled: true,
-                no_confirm_mark_unmark_all: false
-            } as FMG.Extension.Settings);
-        }, 2000);
-    });
-}
+import channel from "@shared/channel/content";
 
 export interface MarkControlsProps {
     onMarkAll: () => void;
@@ -51,7 +23,7 @@ export default class MarkControls extends InjectedComponent<MarkControlsProps> {
     }
 
     private async mark(found: boolean) {
-        const { no_confirm_mark_unmark_all } = await getSettings();
+        const { no_confirm_mark_unmark_all } = await channel.offscreen.getSettings();
 
         if (
             !no_confirm_mark_unmark_all &&

@@ -22,21 +22,7 @@
                 "https://fallout4map.com/*"
             ],
             "run_at": "document_start",
-            "all_frames": true,
-            "world": "ISOLATED"
-        },
-        {
-            "js": [
-                "content.js"
-            ],
-            "matches": [
-                "https://mapgenie.io/*",
-                "https://fo76map.com/*",
-                "https://rdr2map.com/*",
-                "https://fallout4map.com/*"
-            ],
-            "run_at": "document_start",
-            "world": "MAIN"
+            "all_frames": true
         },
         {
             "js": [

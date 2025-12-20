@@ -18,7 +18,6 @@
         "@types/react": "^19.1.0",
         "@types/react-dom": "^19.1.1",
         "@types/toastr": "^2.1.40",
-        "@types/webextension-polyfill": "^0.12.4",
         "@typescript-eslint/eslint-plugin": "^6.3.0",
         "@typescript-eslint/parser": "^6.3.0",
         "concurrently": "^9.1.2",
@@ -71,8 +70,7 @@
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
         "tiny-uid": "^1.1.2",
-        "toastr": "^2.1.4",
-        "webextension-polyfill": "^0.12.0"
+        "toastr": "^2.1.4"
     },
     "packageManager": "yarn@1.22.22"
 }
